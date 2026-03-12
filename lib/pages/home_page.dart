@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:la_nona/models/user_profile.dart';
+import 'package:la_nona/pages/menu_page.dart';
 import 'package:la_nona/services/address_form_service.dart';
 import 'package:la_nona/services/auth_service.dart';
 import 'package:la_nona/services/session_service.dart';
@@ -200,7 +201,13 @@ class _HomePageState extends State<HomePage> {
                     Icons.restaurant_menu,
                     'Cardápio',
                     'Explore nosso cardápio completo',
-                    () {},
+                    () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (context) => const MenuPage(),
+                        ),
+                      );
+                    },
                   ),
                   const SizedBox(height: 12),
                   _buildFeatureCard(
@@ -208,7 +215,14 @@ class _HomePageState extends State<HomePage> {
                     Icons.shopping_cart,
                     'Meus Pedidos',
                     'Veja e acompanhe seus pedidos',
-                    () {},
+                    () {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Funcionalidade em desenvolvimento'),
+                          duration: Duration(seconds: 2),
+                        ),
+                      );
+                    },
                   ),
                   const SizedBox(height: 12),
                   _buildFeatureCard(
@@ -216,7 +230,14 @@ class _HomePageState extends State<HomePage> {
                     Icons.favorite,
                     'Favoritos',
                     'Seus pratos favoritos',
-                    () {},
+                    () {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Funcionalidade em desenvolvimento'),
+                          duration: Duration(seconds: 2),
+                        ),
+                      );
+                    },
                   ),
                   const SizedBox(height: 32),
                   Container(
