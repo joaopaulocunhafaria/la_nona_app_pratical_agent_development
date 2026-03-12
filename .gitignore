@@ -43,3 +43,51 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# ============================================================
+# FIREBASE & API KEYS - NUNCA VERSIONAR ESTES ARQUIVOS
+# ============================================================
+
+# Firebase Android config (contém API Key, project IDs, client IDs)
+android/app/google-services.json
+
+# Firebase iOS config (contém API Key, project IDs, client IDs)
+ios/Runner/GoogleService-Info.plist
+
+# Firebase macOS config
+macos/Runner/GoogleService-Info.plist
+
+# Firebase Dart options gerado pelo FlutterFire CLI
+# Contém apiKey, appId, messagingSenderId, etc.
+lib/firebase_options.dart
+
+# Arquivos de variáveis de ambiente locais
+.env
+.env.local
+.env.*.local
+.env.development
+.env.staging
+.env.production
+*.env
+
+# Arquivos de segredos e credenciais
+secrets.dart
+secrets.json
+credentials.json
+service_account.json
+service-account.json
+*_service_account.json
+
+# Keystore Android (assinatura de APK/AAB)
+# Já coberto em android/.gitignore, mas reforçando na raiz
+*.keystore
+*.jks
+key.properties
+android/key.properties
+
+# Certificados e chaves privadas
+*.p12
+*.pem
+*.p8
+*.cer
+*.mobileprovision
