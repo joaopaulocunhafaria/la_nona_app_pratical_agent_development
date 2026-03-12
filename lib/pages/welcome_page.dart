@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:la_nona/theme/app_colors.dart';
 import 'package:provider/provider.dart';
 import 'package:sign_in_button/sign_in_button.dart';
 import 'package:la_nona/services/auth_service.dart';
@@ -28,8 +29,8 @@ class _WelcomePageState extends State<WelcomePage> {
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
             colors: [
-              Theme.of(context).primaryColor.withAlpha(180),
-              Theme.of(context).primaryColor.withAlpha(100),
+              Theme.of(context).colorScheme.primary.withAlpha(180),
+              Theme.of(context).colorScheme.primary.withAlpha(100),
             ],
           ),
         ),
@@ -45,21 +46,22 @@ class _WelcomePageState extends State<WelcomePage> {
                     width: 100,
                     height: 100,
                     decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(50),
+                      color: AppColors.surfaceLight,
+                      shape: BoxShape.circle,
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withAlpha(76),
+                          color: AppColors.textPrimary.withAlpha(76),
                           blurRadius: 10,
                           offset: const Offset(0, 4),
                         ),
                       ],
                     ),
-                    child: Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: SvgPicture.asset(
-                        'assets/la-nona-logo.svg',
-                        fit: BoxFit.contain,
+                    child: ClipOval(
+                      child: SizedBox.expand(
+                        child: SvgPicture.asset(
+                          'assets/la-nona-logo.svg',
+                          fit: BoxFit.cover,
+                        ),
                       ),
                     ),
                   ),
@@ -69,34 +71,32 @@ class _WelcomePageState extends State<WelcomePage> {
                   Text(
                     'La Nona',
                     style: Theme.of(context).textTheme.displayMedium?.copyWith(
-                      color: Colors.white,
+                      color: Theme.of(context).colorScheme.onPrimary,
+                      fontFamily: 'SignaturaMonoline',
                       fontWeight: FontWeight.bold,
+                      fontSize: 70,
                     ),
                   ),
                   const SizedBox(height: 12),
-
-                  // Subtítulo
-                  Text(
-                    'Autenticação Segura e Rápida',
-                    style: Theme.of(
-                      context,
-                    ).textTheme.titleMedium?.copyWith(color: Colors.white70),
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 40),
 
                   // Descrição
                   Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: Colors.white.withAlpha(25),
+                      color: Theme.of(
+                        context,
+                      ).colorScheme.onPrimary.withAlpha(25),
                       borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: Colors.white30),
+                      border: Border.all(
+                        color: Theme.of(
+                          context,
+                        ).colorScheme.onPrimary.withAlpha(76),
+                      ),
                     ),
                     child: Text(
-                      'Acesse sua conta ou crie uma nova para começar a usar o app La Nona. Você pode entrar rapidamente com sua conta Google ou usar email e senha.',
+                      'Acesse sua conta ou crie uma nova para começar a usar o app. Você pode entrar rapidamente com sua conta Google ou usar email e senha.',
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: Colors.white,
+                        color: Theme.of(context).colorScheme.onPrimary,
                         height: 1.5,
                       ),
                       textAlign: TextAlign.center,
@@ -119,8 +119,8 @@ class _WelcomePageState extends State<WelcomePage> {
                       label: const Text('Entrar com Email'),
                       style: ElevatedButton.styleFrom(
                         padding: const EdgeInsets.symmetric(vertical: 14),
-                        backgroundColor: Colors.white,
-                        foregroundColor: Theme.of(context).primaryColor,
+                        backgroundColor: AppColors.surfaceLight,
+                        foregroundColor: Theme.of(context).colorScheme.primary,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(8),
                         ),
@@ -133,17 +133,32 @@ class _WelcomePageState extends State<WelcomePage> {
                   Row(
                     children: [
                       Expanded(
-                        child: Divider(color: Colors.white30, thickness: 1),
+                        child: Divider(
+                          color: Theme.of(
+                            context,
+                          ).colorScheme.onPrimary.withAlpha(76),
+                          thickness: 1,
+                        ),
                       ),
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 12),
                         child: Text(
                           'ou',
-                          style: TextStyle(color: Colors.white70, fontSize: 12),
+                          style: TextStyle(
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.onPrimary.withAlpha(179),
+                            fontSize: 12,
+                          ),
                         ),
                       ),
                       Expanded(
-                        child: Divider(color: Colors.white30, thickness: 1),
+                        child: Divider(
+                          color: Theme.of(
+                            context,
+                          ).colorScheme.onPrimary.withAlpha(76),
+                          thickness: 1,
+                        ),
                       ),
                     ],
                   ),
@@ -183,9 +198,9 @@ class _WelcomePageState extends State<WelcomePage> {
         SnackBar(
           content: Text(
             e.toString(),
-            style: const TextStyle(color: Colors.white),
+            style: TextStyle(color: Theme.of(context).colorScheme.onError),
           ),
-          backgroundColor: Colors.red,
+          backgroundColor: Theme.of(context).colorScheme.error,
           duration: const Duration(seconds: 4),
         ),
       );

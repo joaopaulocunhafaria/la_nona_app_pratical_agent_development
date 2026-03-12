@@ -3,6 +3,7 @@ import 'package:la_nona/models/user_profile.dart';
 import 'package:la_nona/services/address_form_service.dart';
 import 'package:la_nona/services/auth_service.dart';
 import 'package:la_nona/services/session_service.dart';
+import 'package:la_nona/theme/app_colors.dart';
 import 'package:la_nona/services/user_profile_service.dart';
 import 'package:provider/provider.dart';
 
@@ -29,9 +30,8 @@ class _HomePageState extends State<HomePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('La Nona'),
+        title: const Text('La Nonna'),
         elevation: 0,
-        backgroundColor: Theme.of(context).primaryColor,
         actions: [
           IconButton(
             icon: const Icon(Icons.logout),
@@ -91,8 +91,10 @@ class _HomePageState extends State<HomePage> {
                           begin: Alignment.topLeft,
                           end: Alignment.bottomRight,
                           colors: [
-                            Theme.of(context).primaryColor,
-                            Theme.of(context).primaryColor.withAlpha(180),
+                            Theme.of(context).colorScheme.primary,
+                            Theme.of(
+                              context,
+                            ).colorScheme.primary.withAlpha(180),
                           ],
                         ),
                         borderRadius: BorderRadius.circular(12),
@@ -108,12 +110,14 @@ class _HomePageState extends State<HomePage> {
                               decoration: BoxDecoration(
                                 shape: BoxShape.circle,
                                 border: Border.all(
-                                  color: Colors.white,
+                                  color: Theme.of(
+                                    context,
+                                  ).colorScheme.onPrimary,
                                   width: 3,
                                 ),
                                 boxShadow: [
                                   BoxShadow(
-                                    color: Colors.black.withAlpha(76),
+                                    color: AppColors.textPrimary.withAlpha(76),
                                     blurRadius: 8,
                                     offset: const Offset(0, 4),
                                   ),
@@ -129,7 +133,8 @@ class _HomePageState extends State<HomePage> {
                                         errorBuilder:
                                             (context, error, stackTrace) {
                                               return Container(
-                                                color: Colors.grey[300],
+                                                color:
+                                                    AppColors.surfaceSoftGreen,
                                                 child: const Icon(
                                                   Icons.person,
                                                   size: 40,
@@ -138,7 +143,7 @@ class _HomePageState extends State<HomePage> {
                                             },
                                       )
                                     : Container(
-                                        color: Colors.grey[300],
+                                        color: AppColors.surfaceSoftGreen,
                                         child: const Icon(
                                           Icons.person,
                                           size: 40,
@@ -153,7 +158,9 @@ class _HomePageState extends State<HomePage> {
                               'Bem-vindo!',
                               style: Theme.of(context).textTheme.titleLarge
                                   ?.copyWith(
-                                    color: Colors.white,
+                                    color: Theme.of(
+                                      context,
+                                    ).colorScheme.onPrimary,
                                     fontWeight: FontWeight.bold,
                                   ),
                             ),
@@ -164,7 +171,7 @@ class _HomePageState extends State<HomePage> {
                             Icons.person,
                             'Nome',
                             displayName,
-                            Colors.white,
+                            Theme.of(context).colorScheme.onPrimary,
                           ),
                           const SizedBox(height: 12),
                           _buildInfoRow(
@@ -172,16 +179,8 @@ class _HomePageState extends State<HomePage> {
                             Icons.email,
                             'Email',
                             displayEmail,
-                            Colors.white,
-                          ),
-                          const SizedBox(height: 12),
-                          _buildInfoRow(
-                            context,
-                            Icons.verified_user,
-                            'ID do Usuário',
-                            shortUid,
-                            Colors.white70,
-                          ),
+                            Theme.of(context).colorScheme.onPrimary,
+                          )
                         ],
                       ),
                     ),
@@ -223,38 +222,14 @@ class _HomePageState extends State<HomePage> {
                   Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: Colors.blue[50],
+                      color: AppColors.accentCream,
                       borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: Colors.blue[200]!, width: 1),
+                      border: Border.all(
+                        color: AppColors.accentGoldSoft,
+                        width: 1,
+                      ),
                     ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            Icon(Icons.info, color: Colors.blue[700]),
-                            const SizedBox(width: 12),
-                            Text(
-                              'Informações de Autenticação',
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                color: Colors.blue[700],
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 12),
-                        Text(
-                          'Você está conectado com segurança usando Firebase Authentication. '
-                          'Sua sessão é automaticamente sincronizada em todos os seus dispositivos.',
-                          style: TextStyle(
-                            color: Colors.blue[700],
-                            fontSize: 12,
-                            height: 1.5,
-                          ),
-                        ),
-                      ],
-                    ),
+                   
                   ),
                 ],
               ),
@@ -341,12 +316,19 @@ class _HomePageState extends State<HomePage> {
                     const SizedBox(height: 4),
                     Text(
                       description,
-                      style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: AppColors.textSecondary,
+                      ),
                     ),
                   ],
                 ),
               ),
-              Icon(Icons.arrow_forward_ios, color: Colors.grey[400], size: 16),
+              const Icon(
+                Icons.arrow_forward_ios,
+                color: AppColors.secondaryLight,
+                size: 16,
+              ),
             ],
           ),
         ),
@@ -361,23 +343,23 @@ class _HomePageState extends State<HomePage> {
       width: double.infinity,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.green[50],
+        color: AppColors.surfaceSoftGreen,
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Colors.green[200]!, width: 1),
+        border: Border.all(color: AppColors.secondaryLight, width: 1),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              Icon(Icons.location_on, color: Colors.green[700]),
+              const Icon(Icons.location_on, color: AppColors.secondaryBase),
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
                   'Endereço do Usuário',
-                  style: TextStyle(
+                  style: const TextStyle(
                     fontWeight: FontWeight.bold,
-                    color: Colors.green[700],
+                    color: AppColors.secondaryBase,
                   ),
                 ),
               ),
@@ -401,7 +383,7 @@ class _HomePageState extends State<HomePage> {
             profile.onboardingCompleted
                 ? '${address.rua}, ${address.numero} - ${address.bairro}, ${address.cidade}/${address.estado}. CEP: ${address.cep}${address.complemento.isNotEmpty ? ' (${address.complemento})' : ''}'
                 : 'Endereço ainda não cadastrado.',
-            style: TextStyle(color: Colors.green[700]),
+            style: const TextStyle(color: AppColors.secondaryBase),
           ),
         ],
       ),

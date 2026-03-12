@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:la_nona/services/auth_service.dart';
 import 'package:la_nona/services/user_profile_service.dart';
+import 'package:la_nona/theme/app_theme.dart';
 import 'package:la_nona/widgets/auth_check.dart';
 import 'firebase_options.dart';
 
@@ -40,32 +41,9 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => UserProvider()),
       ],
       child: MaterialApp(
-        title: 'La Nona',
+        title: 'La Nonna',
         debugShowCheckedModeBanner: false,
-        theme: ThemeData(
-          // Tema com seed color roxo
-          colorScheme: ColorScheme.fromSeed(
-            seedColor: Colors.deepPurple,
-            brightness: Brightness.light,
-          ),
-          useMaterial3: true,
-          // Customização adicional do tema
-          appBarTheme: AppBarTheme(
-            elevation: 0,
-            backgroundColor: Colors.deepPurple,
-            foregroundColor: Colors.white,
-            centerTitle: true,
-          ),
-          elevatedButtonTheme: ElevatedButtonThemeData(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.deepPurple,
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-            ),
-          ),
-        ),
+        theme: AppTheme.light,
         // Home widget é o AuthCheck, que faz roteamento condicional
         home: const AuthCheck(),
       ),

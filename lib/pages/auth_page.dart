@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:la_nona/theme/app_colors.dart';
 import 'package:provider/provider.dart';
 import 'package:la_nona/services/auth_service.dart';
 
@@ -46,7 +47,6 @@ class _AuthPageState extends State<AuthPage> {
       appBar: AppBar(
         title: Text(_isLoginMode ? 'Login' : 'Criar Conta'),
         elevation: 0,
-        backgroundColor: Theme.of(context).primaryColor,
       ),
       body: Container(
         decoration: BoxDecoration(
@@ -54,8 +54,8 @@ class _AuthPageState extends State<AuthPage> {
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
             colors: [
-              Theme.of(context).primaryColor.withAlpha(180),
-              Theme.of(context).primaryColor.withAlpha(100),
+              Theme.of(context).colorScheme.primary.withAlpha(180),
+              Theme.of(context).colorScheme.primary.withAlpha(100),
             ],
           ),
         ),
@@ -70,9 +70,9 @@ class _AuthPageState extends State<AuthPage> {
                   Text(
                     _isLoginMode ? 'Bem-vindo de volta!' : 'Crie sua conta',
                     style: Theme.of(context).textTheme.displaySmall?.copyWith(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                        ),
+                      color: Theme.of(context).colorScheme.onPrimary,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                   const SizedBox(height: 12),
 
@@ -82,8 +82,10 @@ class _AuthPageState extends State<AuthPage> {
                         ? 'Entre com suas credenciais'
                         : 'Preencha os dados abaixo',
                     style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                          color: Colors.white70,
-                        ),
+                      color: Theme.of(
+                        context,
+                      ).colorScheme.onPrimary.withAlpha(179),
+                    ),
                   ),
                   const SizedBox(height: 40),
 
@@ -112,14 +114,14 @@ class _AuthPageState extends State<AuthPage> {
                               enabledBorder: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(8),
                                 borderSide: const BorderSide(
-                                  color: Colors.grey,
+                                  color: AppColors.secondaryLight,
                                   width: 1,
                                 ),
                               ),
                               focusedBorder: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(8),
                                 borderSide: BorderSide(
-                                  color: Theme.of(context).primaryColor,
+                                  color: Theme.of(context).colorScheme.primary,
                                   width: 2,
                                 ),
                               ),
@@ -155,14 +157,14 @@ class _AuthPageState extends State<AuthPage> {
                               enabledBorder: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(8),
                                 borderSide: const BorderSide(
-                                  color: Colors.grey,
+                                  color: AppColors.secondaryLight,
                                   width: 1,
                                 ),
                               ),
                               focusedBorder: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(8),
                                 borderSide: BorderSide(
-                                  color: Theme.of(context).primaryColor,
+                                  color: Theme.of(context).colorScheme.primary,
                                   width: 2,
                                 ),
                               ),
@@ -180,37 +182,48 @@ class _AuthPageState extends State<AuthPage> {
                                       ? null
                                       : () => _handleAuthentication(context),
                                   style: ElevatedButton.styleFrom(
-                                    padding:
-                                        const EdgeInsets.symmetric(vertical: 14),
-                                    backgroundColor:
-                                        Theme.of(context).primaryColor,
-                                    foregroundColor: Colors.white,
+                                    padding: const EdgeInsets.symmetric(
+                                      vertical: 14,
+                                    ),
+                                    backgroundColor: Theme.of(
+                                      context,
+                                    ).colorScheme.primary,
+                                    foregroundColor: Theme.of(
+                                      context,
+                                    ).colorScheme.onPrimary,
                                     shape: RoundedRectangleBorder(
                                       borderRadius: BorderRadius.circular(8),
                                     ),
-                                    disabledBackgroundColor:
-                                        Theme.of(context).primaryColor.withAlpha(
-                                            128),
+                                    disabledBackgroundColor: Theme.of(
+                                      context,
+                                    ).colorScheme.primary.withAlpha(128),
                                   ),
                                   child: authService.isLoading
-                                      ? const SizedBox(
+                                      ? SizedBox(
                                           height: 20,
                                           width: 20,
                                           child:
                                               CircularProgressIndicator.adaptive(
-                                            valueColor:
-                                                AlwaysStoppedAnimation<Color>(
-                                                    Colors.white),
-                                          ),
+                                                valueColor:
+                                                    AlwaysStoppedAnimation<
+                                                      Color
+                                                    >(
+                                                      Theme.of(
+                                                        context,
+                                                      ).colorScheme.onPrimary,
+                                                    ),
+                                              ),
                                         )
                                       : Text(
-                                          _isLoginMode ? 'Entrar' : 'Criar Conta',
+                                          _isLoginMode
+                                              ? 'Entrar'
+                                              : 'Criar Conta',
                                           style: const TextStyle(
                                             fontSize: 16,
                                             fontWeight: FontWeight.bold,
                                           ),
                                         ),
-                                )
+                                ),
                               );
                             },
                           ),
@@ -235,14 +248,16 @@ class _AuthPageState extends State<AuthPage> {
                                 ? 'Não tem conta? '
                                 : 'Já tem conta? ',
                             style: TextStyle(
-                              color: Colors.white70,
+                              color: Theme.of(
+                                context,
+                              ).colorScheme.onPrimary.withAlpha(179),
                               fontSize: 14,
                             ),
                           ),
                           TextSpan(
                             text: _isLoginMode ? 'Crie uma' : 'Faça login',
-                            style: const TextStyle(
-                              color: Colors.white,
+                            style: TextStyle(
+                              color: Theme.of(context).colorScheme.onPrimary,
                               fontSize: 14,
                               fontWeight: FontWeight.bold,
                               decoration: TextDecoration.underline,
@@ -310,13 +325,13 @@ class _AuthPageState extends State<AuthPage> {
       SnackBar(
         content: Text(
           message,
-          style: const TextStyle(color: Colors.white),
+          style: TextStyle(color: Theme.of(context).colorScheme.onError),
         ),
-        backgroundColor: Colors.red,
+        backgroundColor: Theme.of(context).colorScheme.error,
         duration: const Duration(seconds: 4),
         action: SnackBarAction(
           label: 'Fechar',
-          textColor: Colors.white,
+          textColor: Theme.of(context).colorScheme.onError,
           onPressed: () {},
         ),
       ),

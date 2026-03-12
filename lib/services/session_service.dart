@@ -18,7 +18,12 @@ class SessionService {
           ),
           TextButton(
             onPressed: () => Navigator.pop(dialogContext, true),
-            child: const Text('Sair', style: TextStyle(color: Colors.red)),
+            child: Text(
+              'Sair',
+              style: TextStyle(
+                color: Theme.of(dialogContext).colorScheme.error,
+              ),
+            ),
           ),
         ],
       ),
@@ -36,9 +41,9 @@ class SessionService {
         SnackBar(
           content: Text(
             'Erro ao fazer logout: $e',
-            style: const TextStyle(color: Colors.white),
+            style: TextStyle(color: Theme.of(context).colorScheme.onError),
           ),
-          backgroundColor: Colors.red,
+          backgroundColor: Theme.of(context).colorScheme.error,
         ),
       );
     }

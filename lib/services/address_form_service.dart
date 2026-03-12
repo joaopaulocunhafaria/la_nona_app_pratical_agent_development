@@ -258,9 +258,9 @@ class _AddressDialogState extends State<_AddressDialog> {
 
     if (!widget.userProfileService.isValidCep(cep)) {
       messenger.showSnackBar(
-        const SnackBar(
+        SnackBar(
           content: Text('Digite um CEP válido para buscar.'),
-          backgroundColor: Colors.red,
+          backgroundColor: Theme.of(context).colorScheme.error,
         ),
       );
       return;
@@ -284,7 +284,7 @@ class _AddressDialogState extends State<_AddressDialog> {
       messenger.showSnackBar(
         SnackBar(
           content: Text('Não foi possível buscar o CEP: $e'),
-          backgroundColor: Colors.red,
+          backgroundColor: Theme.of(context).colorScheme.error,
         ),
       );
     } finally {
@@ -326,7 +326,7 @@ class _AddressDialogState extends State<_AddressDialog> {
       messenger.showSnackBar(
         SnackBar(
           content: Text('Erro ao salvar endereço: $e'),
-          backgroundColor: Colors.red,
+          backgroundColor: Theme.of(context).colorScheme.error,
         ),
       );
     } finally {
