@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "273167992012",
+    "project_id": "la-nona-cafeteria",
+    "storage_bucket": "la-nona-cafeteria.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:273167992012:android:6757cb1fee2b7f8e852e69",
+        "android_client_info": {
+          "package_name": "com.example.la_nona"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "273167992012-ba9gua8bfb85sfm0cev53s0cim23t9pf.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyALISkSwbCQKwY2MwtqeYIOc38wKRC4wsA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "273167992012-ba9gua8bfb85sfm0cev53s0cim23t9pf.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
