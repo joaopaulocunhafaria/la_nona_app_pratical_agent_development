@@ -48,6 +48,9 @@ app.*.map.json
 # FIREBASE & API KEYS - NUNCA VERSIONAR ESTES ARQUIVOS
 # ============================================================
 
+# Firebase configuration (contém IDs do projeto e apps)
+firebase.json
+
 # Firebase Android config (contém API Key, project IDs, client IDs)
 android/app/google-services.json
 
