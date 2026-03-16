@@ -59,7 +59,7 @@ class _WelcomePageState extends State<WelcomePage> {
                     child: ClipOval(
                       child: SizedBox.expand(
                         child: SvgPicture.asset(
-                          'assets/la-nona-logo.svg',
+                          'assets/la-nona-logo-splash.svg',
                           fit: BoxFit.cover,
                         ),
                       ),
@@ -69,13 +69,13 @@ class _WelcomePageState extends State<WelcomePage> {
 
                   // Título
                   Text(
-                    'La Nona',
-                    style: Theme.of(context).textTheme.displayMedium?.copyWith(
-                      color: Theme.of(context).colorScheme.onPrimary,
-                      fontFamily: 'SignaturaMonoline',
-                      fontWeight: FontWeight.bold,
-                      fontSize: 70,
-                    ),
+                    'La Nonna',
+                      style: Theme.of(context).textTheme.displayMedium?.copyWith(
+                        color: Theme.of(context).colorScheme.onPrimary,
+                        fontFamily: 'SignaturaMonoline',
+                        fontWeight: FontWeight.bold,
+                        fontSize: 70,
+                      ),
                   ),
                   const SizedBox(height: 12),
 

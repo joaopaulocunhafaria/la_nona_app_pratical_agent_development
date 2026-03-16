@@ -130,13 +130,27 @@ class UserProfile {
   factory UserProfile.fromDoc(DocumentSnapshot<Map<String, dynamic>> doc) {
     final data = doc.data() ?? {};
 
+    Map<String, dynamic>? addressData;
+    try {
+      final addressValue = data['address'];
+      if (addressValue is Map<String, dynamic>) {
+        addressData = addressValue;
+      } else if (addressValue != null) {
+        // Try to convert if it's a different map type
+        addressData = Map<String, dynamic>.from(addressValue as Map);
+      }
+    } catch (e) {
+      // If parsing address fails, use empty map
+      addressData = null;
+    }
+
     return UserProfile(
       uid: (data['uid'] ?? doc.id).toString(),
       email: (data['email'] ?? '').toString(),
       name: (data['name'] ?? '').toString(),
       photoUrl: (data['photoUrl'] ?? '').toString(),
       provider: (data['provider'] ?? 'google').toString(),
-      address: UserAddress.fromMap(data['address'] as Map<String, dynamic>?),
+      address: UserAddress.fromMap(addressData),
       onboardingCompleted: data['onboardingCompleted'] == true,
       createdAt: _parseTimestamp(data['createdAt']),
       updatedAt: _parseTimestamp(data['updatedAt']),

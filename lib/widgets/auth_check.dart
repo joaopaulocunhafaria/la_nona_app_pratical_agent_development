@@ -24,22 +24,64 @@ class _AuthCheckState extends State<AuthCheck> {
   Widget build(BuildContext context) {
     return Consumer<AuthService>(
       builder: (context, authService, _) {
-        // Mostra indicador de carregamento enquanto valida autenticação
-        if (authService.isLoading) {
-          return const Scaffold(
+        try {
+          // Mostra indicador de carregamento enquanto valida autenticação
+          if (authService.isLoading) {
+            return const Scaffold(
+              body: Center(
+                child: CircularProgressIndicator(),
+              ),
+            );
+          }
+
+          // Se usuário está autenticado, exibe página principal
+          if (authService.isAuthenticated) {
+            return const HomePage();
+          }
+
+          // Se usuário não está autenticado, exibe página de boas-vindas
+          return const WelcomePage();
+        } catch (e, stackTrace) {
+          debugPrint('Erro em AuthCheck: $e\n$stackTrace');
+          return Scaffold(
             body: Center(
-              child: CircularProgressIndicator(),
+              child: SingleChildScrollView(
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.error_outline,
+                        size: 64,
+                        color: Theme.of(context).colorScheme.error,
+                      ),
+                      const SizedBox(height: 16),
+                      Text(
+                        'Ocorreu um erro',
+                        style: Theme.of(context).textTheme.headlineSmall,
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Erro: $e',
+                        style: Theme.of(context).textTheme.bodyMedium,
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 24),
+                      ElevatedButton(
+                        onPressed: () {
+                          // Tenta recarregar
+                          setState(() {});
+                        },
+                        child: const Text('Tentar Novamente'),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
             ),
           );
         }
-
-        // Se usuário está autenticado, exibe página principal
-        if (authService.isAuthenticated) {
-          return const HomePage();
-        }
-
-        // Se usuário não está autenticado, exibe página de boas-vindas
-        return const WelcomePage();
       },
     );
   }

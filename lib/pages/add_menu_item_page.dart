@@ -51,6 +51,7 @@ class _AddMenuItemPageState extends State<AddMenuItemPage> {
   @override
   void initState() {
     super.initState();
+    
     _nameController = TextEditingController(text: widget.editingItem?.name ?? '');
     _descriptionController =
         TextEditingController(text: widget.editingItem?.description ?? '');
@@ -76,14 +77,14 @@ class _AddMenuItemPageState extends State<AddMenuItemPage> {
   Future<void> _pickImagesFromGallery() async {
     try {
       final List<XFile> pickedFiles = await _imagePicker.pickMultiImage(
-        imageQuality: 80,
+        imageQuality: 70,
       );
 
       if (pickedFiles.isNotEmpty) {
         setState(() {
-          _selectedImages.addAll(
-            pickedFiles.map((xFile) => File(xFile.path)),
-          );
+          for (var xFile in pickedFiles) {
+            _selectedImages.add(File(xFile.path));
+          }
         });
       }
     } catch (e) {
@@ -100,7 +101,7 @@ class _AddMenuItemPageState extends State<AddMenuItemPage> {
     try {
       final XFile? pickedFile = await _imagePicker.pickImage(
         source: ImageSource.camera,
-        imageQuality: 80,
+        imageQuality: 70,
       );
 
       if (pickedFile != null) {
@@ -133,12 +134,20 @@ class _AddMenuItemPageState extends State<AddMenuItemPage> {
 
   /// Salva o item do cardápio
   Future<void> _saveMenuItem() async {
-    if (!_formKey.currentState!.validate()) return;
+    if (!_formKey.currentState!.validate()) {
+      return;
+    }
 
     if (_selectedImages.isEmpty && _existingImageUrls.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Adicione pelo menos uma imagem')),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Adicione pelo menos uma imagem')),
+        );
+      }
+      return;
+    }
+
+    if (!mounted) {
       return;
     }
 
@@ -147,24 +156,46 @@ class _AddMenuItemPageState extends State<AddMenuItemPage> {
     });
 
     try {
-      final String itemId = widget.editingItem?.id ?? DateTime.now().millisecondsSinceEpoch.toString();
+      // Validar inputs básicos
+      final nameText = _nameController.text.trim();
+      final descriptionText = _descriptionController.text.trim();
+      final priceText = _priceController.text.trim();
+
+      if (nameText.isEmpty) {
+        throw Exception('Nome do item é obrigatório');
+      }
+
+      if (descriptionText.isEmpty) {
+        throw Exception('Descrição do item é obrigatória');
+      }
+
+      // Validar e converter preço
+      final price = double.tryParse(priceText);
+      if (price == null || price <= 0) {
+        throw Exception('Preço inválido: deve ser um número maior que 0');
+      }
+
+      final String itemId = widget.editingItem?.id ?? 
+          DateTime.now().millisecondsSinceEpoch.toString();
+
       List<String> allImageUrls = [..._existingImageUrls];
 
-      // Upload de novas imagens
+      // Upload de novas imagens usando o serviço centralizado
       if (_selectedImages.isNotEmpty) {
-        final uploadedUrls = await _storageService.uploadMultipleImages(
-          _selectedImages,
-          itemId,
-        );
-        allImageUrls.addAll(uploadedUrls);
+        try {
+          final newUrls = await _storageService.uploadMultipleImages(_selectedImages, itemId);
+          allImageUrls.addAll(newUrls);
+        } catch (_) {
+          rethrow;
+        }
       }
 
       // Cria ou atualiza o item
       final menuItem = MenuItem(
         id: itemId,
-        name: _nameController.text.trim(),
-        description: _descriptionController.text.trim(),
-        price: double.parse(_priceController.text.trim()),
+        name: nameText,
+        description: descriptionText,
+        price: price,
         category: _selectedCategory ?? 'Outro',
         available: _available,
         imageUrls: allImageUrls,
@@ -178,22 +209,38 @@ class _AddMenuItemPageState extends State<AddMenuItemPage> {
         await _menuItemService.updateMenuItem(menuItem);
       }
 
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              widget.editingItem == null
-                  ? 'Item adicionado com sucesso!'
-                  : 'Item atualizado com sucesso!',
-            ),
-          ),
-        );
-        Navigator.of(context).pop();
+      if (!mounted) {
+        return;
       }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            widget.editingItem == null
+                ? 'Item adicionado com sucesso!'
+                : 'Item atualizado com sucesso!',
+          ),
+          backgroundColor: Colors.green,
+        ),
+      );
+
+      // Pequeno delay antes de navegar de volta
+      await Future.delayed(const Duration(milliseconds: 500));
+      
+      if (!mounted) {
+        return;
+      }
+
+      Navigator.of(context).pop();
+      
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Erro ao salvar item: $e')),
+          SnackBar(
+            content: Text('❌ Erro ao salvar: $e'),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 7),
+          ),
         );
       }
     } finally {
@@ -360,6 +407,7 @@ class _AddMenuItemPageState extends State<AddMenuItemPage> {
                     ),
                   ),
                 ),
+                const SizedBox(height: 60),
               ],
             ),
           ),

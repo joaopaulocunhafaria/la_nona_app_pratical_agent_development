@@ -126,7 +126,7 @@ class UserProfileService extends ChangeNotifier {
       await watchCurrentUser(user.uid);
     } catch (e) {
       _setError('Erro ao sincronizar perfil do usuário: $e');
-      rethrow;
+      debugPrint('Erro ao sincronizar usuário: $e');
     } finally {
       _setLoading(false);
     }
@@ -137,14 +137,21 @@ class UserProfileService extends ChangeNotifier {
 
     _profileSubscription = _userDoc(uid).snapshots().listen(
       (doc) {
-        if (!doc.exists) {
-          _profile = null;
-        } else {
-          _profile = UserProfile.fromDoc(doc);
+        try {
+          if (!doc.exists) {
+            _profile = null;
+          } else {
+            _profile = UserProfile.fromDoc(doc);
+          }
+          _setError(null);
+          notifyListeners();
+        } catch (e, stackTrace) {
+          debugPrint('Erro ao processar perfil do usuário: $e\n$stackTrace');
+          _setError('Erro ao carregar perfil: $e');
         }
-        notifyListeners();
       },
-      onError: (Object error) {
+      onError: (Object error, StackTrace stackTrace) {
+        debugPrint('Erro na stream do perfil: $error\n$stackTrace');
         _setError('Erro ao carregar perfil: $error');
       },
     );

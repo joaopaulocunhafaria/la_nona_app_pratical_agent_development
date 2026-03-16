@@ -31,7 +31,15 @@ class _HomePageState extends State<HomePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('La Nonna'),
+        title: Text(
+          'La Nonna',
+          style: Theme.of(context).textTheme.displayMedium?.copyWith(
+            color: Theme.of(context).colorScheme.onPrimary,
+            fontFamily: 'SignaturaMonoline',
+            fontWeight: FontWeight.bold,
+            fontSize: 60,
+          ),
+        ),
         elevation: 0,
         actions: [
           IconButton(
@@ -181,7 +189,7 @@ class _HomePageState extends State<HomePage> {
                             'Email',
                             displayEmail,
                             Theme.of(context).colorScheme.onPrimary,
-                          )
+                          ),
                         ],
                       ),
                     ),
@@ -250,7 +258,6 @@ class _HomePageState extends State<HomePage> {
                         width: 1,
                       ),
                     ),
-                   
                   ),
                 ],
               ),

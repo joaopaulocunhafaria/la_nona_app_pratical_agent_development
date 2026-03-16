@@ -5,13 +5,6 @@ allprojects {
     }
 }
 
-plugins {
-    // ... outros plugins como id("com.android.application") version "..." apply false
-    
-    // Adicione esta linha para registrar o plugin do Google
-    id("com.google.gms.google-services") version "4.4.2" apply false
-}
-
 val newBuildDir: Directory =
     rootProject.layout.buildDirectory
         .dir("../../build")

@@ -70,7 +70,7 @@ dev_dependencies:
 flutter_launcher_icons:
   android: true
   ios: true
-  image_path: assets/logoSvg.png
+  image_path: assets/logo1.png
   remove_alpha_ios: true
 
 # For information on the generic Dart part of this file, see the
@@ -86,6 +86,7 @@ flutter:
 
   assets:
     - assets/la-nona-logo.svg
+    - assets/la-nona-logo-splash.svg
   fonts:
     - family: SignaturaMonoline
       fonts:

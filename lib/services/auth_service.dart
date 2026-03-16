@@ -65,19 +65,25 @@ class AuthService extends ChangeNotifier {
   /// Monitora mudanças no estado de autenticação do Firebase
   /// Chamado automaticamente no construtor e enquanto o app está em execução
   void _authCheck() {
-    _firebaseAuth.authStateChanges().listen((User? user) async {
-      _user = user;
-      try {
-        if (user != null) {
-          await _userProfileService.syncCurrentUser(user);
-        } else {
-          await _userProfileService.clear();
+    _firebaseAuth.authStateChanges().listen(
+      (User? user) async {
+        try {
+          _user = user;
+          if (user != null) {
+            await _userProfileService.syncCurrentUser(user);
+          } else {
+            await _userProfileService.clear();
+          }
+          notifyListeners();
+        } catch (e, stackTrace) {
+          debugPrint('Falha ao sincronizar usuário no Firestore: $e\n$stackTrace');
+          notifyListeners();
         }
-      } catch (e) {
-        debugPrint('Falha ao sincronizar usuário no Firestore: $e');
-      }
-      notifyListeners();
-    });
+      },
+      onError: (Object error, StackTrace stackTrace) {
+        debugPrint('Erro ao monitorar estado de autenticação: $error\n$stackTrace');
+      },
+    );
   }
 
   /// Define o estado de carregamento
