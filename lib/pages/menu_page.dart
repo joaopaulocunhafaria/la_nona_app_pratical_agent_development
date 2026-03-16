@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:la_nona/data/models/menu_item.dart';
 import 'package:la_nona/data/services/menu_item_service.dart';
+import 'package:la_nona/services/user_profile_service.dart';
 import 'package:la_nona/pages/menu_item_detail_page.dart';
 import 'package:la_nona/pages/add_menu_item_page.dart';
 import 'package:la_nona/theme/app_colors.dart';
@@ -18,22 +20,25 @@ class _MenuPageState extends State<MenuPage> {
 
   @override
   Widget build(BuildContext context) {
+    final isAdmin = context.watch<UserProfileService>().isAdmin;
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Cardápio'),
         elevation: 0,
         actions: [
-          IconButton(
-            icon: const Icon(Icons.add),
-            onPressed: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (context) => const AddMenuItemPage(),
-                ),
-              );
-            },
-            tooltip: 'Adicionar item',
-          ),
+          if (isAdmin)
+            IconButton(
+              icon: const Icon(Icons.add),
+              onPressed: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (context) => const AddMenuItemPage(),
+                  ),
+                );
+              },
+              tooltip: 'Adicionar item',
+            ),
         ],
       ),
       body: StreamBuilder<List<MenuItem>>(
@@ -76,18 +81,20 @@ class _MenuPageState extends State<MenuPage> {
                   ),
                   const SizedBox(height: 16),
                   const Text('Nenhum item no cardápio ainda'),
-                  const SizedBox(height: 16),
-                  ElevatedButton.icon(
-                    onPressed: () {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (context) => const AddMenuItemPage(),
-                        ),
-                      );
-                    },
-                    icon: const Icon(Icons.add),
-                    label: const Text('Adicionar Primeiro Item'),
-                  ),
+                  if (isAdmin) ...[
+                    const SizedBox(height: 16),
+                    ElevatedButton.icon(
+                      onPressed: () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (context) => const AddMenuItemPage(),
+                          ),
+                        );
+                      },
+                      icon: const Icon(Icons.add),
+                      label: const Text('Adicionar Primeiro Item'),
+                    ),
+                  ],
                 ],
               ),
             );
@@ -97,14 +104,14 @@ class _MenuPageState extends State<MenuPage> {
             padding: const EdgeInsets.all(16),
             gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: 2,
-              childAspectRatio: 0.75,
+              childAspectRatio: 0.70, // Ajustado para dar mais espaço para os botões admin
               crossAxisSpacing: 16,
               mainAxisSpacing: 16,
             ),
             itemCount: items.length,
             itemBuilder: (context, index) {
               final item = items[index];
-              return _buildMenuItemCard(context, item);
+              return _buildMenuItemCard(context, item, isAdmin);
             },
           );
         },
@@ -112,7 +119,7 @@ class _MenuPageState extends State<MenuPage> {
     );
   }
 
-  Widget _buildMenuItemCard(BuildContext context, MenuItem item) {
+  Widget _buildMenuItemCard(BuildContext context, MenuItem item, bool isAdmin) {
     return GestureDetector(
       onTap: () {
         Navigator.of(context).push(
@@ -131,51 +138,81 @@ class _MenuPageState extends State<MenuPage> {
           children: [
             /// Imagem do item
             Expanded(
-              child: Container(
-                width: double.infinity,
-                decoration: BoxDecoration(
-                  borderRadius:
-                      const BorderRadius.vertical(top: Radius.circular(12)),
-                  color: Colors.grey[200],
-                ),
-                child: item.imageUrls.isNotEmpty
-                    ? ClipRRect(
-                        borderRadius: const BorderRadius.vertical(
-                          top: Radius.circular(12),
-                        ),
-                        child: Image.network(
-                          item.imageUrls.first,
-                          fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) {
-                            return const Center(
-                              child: Icon(
-                                Icons.broken_image,
-                                color: Colors.grey,
-                                size: 32,
-                              ),
-                            );
-                          },
-                          loadingBuilder: (context, child, loadingProgress) {
-                            if (loadingProgress == null) return child;
-                            return Center(
-                              child: CircularProgressIndicator(
-                                value: loadingProgress.expectedTotalBytes !=
-                                        null
-                                    ? loadingProgress.cumulativeBytesLoaded /
-                                        loadingProgress.expectedTotalBytes!
-                                    : null,
-                              ),
-                            );
-                          },
-                        ),
-                      )
-                    : const Center(
-                        child: Icon(
-                          Icons.image_not_supported,
-                          color: Colors.grey,
-                          size: 48,
-                        ),
+              child: Stack(
+                children: [
+                  Container(
+                    width: double.infinity,
+                    decoration: BoxDecoration(
+                      borderRadius:
+                          const BorderRadius.vertical(top: Radius.circular(12)),
+                      color: Colors.grey[200],
+                    ),
+                    child: item.imageUrls.isNotEmpty
+                        ? ClipRRect(
+                            borderRadius: const BorderRadius.vertical(
+                              top: Radius.circular(12),
+                            ),
+                            child: Image.network(
+                              item.imageUrls.first,
+                              fit: BoxFit.cover,
+                              errorBuilder: (context, error, stackTrace) {
+                                return const Center(
+                                  child: Icon(
+                                    Icons.broken_image,
+                                    color: Colors.grey,
+                                    size: 32,
+                                  ),
+                                );
+                              },
+                              loadingBuilder: (context, child, loadingProgress) {
+                                if (loadingProgress == null) return child;
+                                return Center(
+                                  child: CircularProgressIndicator(
+                                    value: loadingProgress.expectedTotalBytes !=
+                                            null
+                                        ? loadingProgress.cumulativeBytesLoaded /
+                                            loadingProgress.expectedTotalBytes!
+                                        : null,
+                                  ),
+                                );
+                              },
+                            ),
+                          )
+                        : const Center(
+                            child: Icon(
+                              Icons.image_not_supported,
+                              color: Colors.grey,
+                              size: 48,
+                            ),
+                          ),
+                  ),
+                  if (isAdmin)
+                    Positioned(
+                      top: 4,
+                      right: 4,
+                      child: Row(
+                        children: [
+                          _buildAdminActionButton(
+                            icon: Icons.edit,
+                            color: Colors.blue,
+                            onTap: () {
+                              Navigator.of(context).push(
+                                MaterialPageRoute(
+                                  builder: (context) => AddMenuItemPage(editingItem: item),
+                                ),
+                              );
+                            },
+                          ),
+                          const SizedBox(width: 4),
+                          _buildAdminActionButton(
+                            icon: Icons.delete,
+                            color: Colors.red,
+                            onTap: () => _confirmDelete(context, item),
+                          ),
+                        ],
                       ),
+                    ),
+                ],
               ),
             ),
 
@@ -188,7 +225,7 @@ class _MenuPageState extends State<MenuPage> {
                   /// Nome
                   Text(
                     item.name,
-                    maxLines: 2,
+                    maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
                       fontSize: 14,
@@ -221,7 +258,7 @@ class _MenuPageState extends State<MenuPage> {
                       ),
                       if (!item.available)
                         const Text(
-                          'Indisponível',
+                          'Falta',
                           style: TextStyle(
                             fontSize: 10,
                             color: Colors.red,
@@ -235,6 +272,64 @@ class _MenuPageState extends State<MenuPage> {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildAdminActionButton({
+    required IconData icon,
+    required Color color,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(4),
+        decoration: BoxDecoration(
+          color: Colors.white.withOpacity(0.8),
+          shape: BoxShape.circle,
+        ),
+        child: Icon(
+          icon,
+          size: 18,
+          color: color,
+        ),
+      ),
+    );
+  }
+
+  void _confirmDelete(BuildContext context, MenuItem item) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Excluir Item'),
+        content: Text('Tem certeza que deseja excluir "${item.name}"?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancelar'),
+          ),
+          TextButton(
+            onPressed: () async {
+              Navigator.pop(context);
+              try {
+                await _menuItemService.deleteMenuItem(item.id);
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Item excluído com sucesso')),
+                  );
+                }
+              } catch (e) {
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Erro ao excluir item: $e')),
+                  );
+                }
+              }
+            },
+            child: const Text('Excluir', style: TextStyle(color: Colors.red)),
+          ),
+        ],
       ),
     );
   }

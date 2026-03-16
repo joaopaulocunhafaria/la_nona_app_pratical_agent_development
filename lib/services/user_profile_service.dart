@@ -24,6 +24,7 @@ class UserProfileService extends ChangeNotifier {
   UserProfile? get profile => _profile;
   bool get isLoading => _isLoading;
   String? get error => _error;
+  bool get isAdmin => _profile?.isAdmin ?? false;
 
   static final RegExp _cepRegex = RegExp(r'^\d{8}$');
 
@@ -110,6 +111,7 @@ class UserProfileService extends ChangeNotifier {
             complemento: '',
           ).toMap(),
           'onboardingCompleted': false,
+          'isAdmin': false,
           'createdAt': FieldValue.serverTimestamp(),
           'updatedAt': FieldValue.serverTimestamp(),
         });

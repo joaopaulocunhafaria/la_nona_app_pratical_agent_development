@@ -72,6 +72,7 @@ class UserProfile {
   final String provider;
   final UserAddress address;
   final bool onboardingCompleted;
+  final bool isAdmin;
   final DateTime? createdAt;
   final DateTime? updatedAt;
 
@@ -83,6 +84,7 @@ class UserProfile {
     required this.provider,
     required this.address,
     required this.onboardingCompleted,
+    this.isAdmin = false,
     this.createdAt,
     this.updatedAt,
   });
@@ -97,6 +99,7 @@ class UserProfile {
     String? provider,
     UserAddress? address,
     bool? onboardingCompleted,
+    bool? isAdmin,
     DateTime? createdAt,
     DateTime? updatedAt,
   }) {
@@ -108,6 +111,7 @@ class UserProfile {
       provider: provider ?? this.provider,
       address: address ?? this.address,
       onboardingCompleted: onboardingCompleted ?? this.onboardingCompleted,
+      isAdmin: isAdmin ?? this.isAdmin,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );
@@ -122,6 +126,7 @@ class UserProfile {
       'provider': provider,
       'address': address.toMap(),
       'onboardingCompleted': onboardingCompleted,
+      'isAdmin': isAdmin,
       'createdAt': createdAt != null ? Timestamp.fromDate(createdAt!) : null,
       'updatedAt': updatedAt != null ? Timestamp.fromDate(updatedAt!) : null,
     };
@@ -152,6 +157,7 @@ class UserProfile {
       provider: (data['provider'] ?? 'google').toString(),
       address: UserAddress.fromMap(addressData),
       onboardingCompleted: data['onboardingCompleted'] == true,
+      isAdmin: data['isAdmin'] == true,
       createdAt: _parseTimestamp(data['createdAt']),
       updatedAt: _parseTimestamp(data['updatedAt']),
     );

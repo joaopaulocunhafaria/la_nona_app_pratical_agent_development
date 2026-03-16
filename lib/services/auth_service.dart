@@ -17,20 +17,29 @@ class AuthException implements Exception {
 /// Provider para gerenciar informações do usuário autenticado
 class UserProvider extends ChangeNotifier {
   User? _user;
+  bool _isAdmin = false;
 
   User? get user => _user;
   String? get userEmail => _user?.email;
   String? get userName => _user?.displayName;
   String? get userPhotoUrl => _user?.photoURL;
   String? get userId => _user?.uid;
+  bool get isAdmin => _isAdmin;
 
-  void setUser(User? user) {
+  void setUser(User? user, {bool isAdmin = false}) {
     _user = user;
+    _isAdmin = isAdmin;
+    notifyListeners();
+  }
+
+  void setIsAdmin(bool value) {
+    _isAdmin = value;
     notifyListeners();
   }
 
   void clearUser() {
     _user = null;
+    _isAdmin = false;
     notifyListeners();
   }
 }
