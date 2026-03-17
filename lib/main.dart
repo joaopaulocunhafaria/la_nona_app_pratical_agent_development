@@ -6,6 +6,7 @@ import 'package:la_nona/services/auth_service.dart';
 import 'package:la_nona/services/user_profile_service.dart';
 import 'package:la_nona/services/cart_service.dart';
 import 'package:la_nona/services/favorites_service.dart';
+import 'package:la_nona/services/chat_service.dart';
 import 'package:la_nona/theme/app_theme.dart';
 import 'package:la_nona/widgets/auth_check.dart';
 import 'firebase_options.dart';
@@ -60,6 +61,8 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => CartService()),
         // Provider para FavoritesService
         ChangeNotifierProvider(create: (_) => FavoritesService()),
+        // Provider para ChatService
+        Provider(create: (_) => ChatService()),
       ],
       child: MaterialApp(
         title: 'La Nonna',

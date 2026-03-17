@@ -190,6 +190,13 @@ menu_items/{itemId}/{timestamp}.jpg
 - Preview before upload
 - Remove images before save (edit mode support)
 
+### 7. Support Chat System (`CHAT.md`)
+- Real-time Admin-to-User messaging
+- Client-restricted private channels
+- Admin centralized dashboard for inquiries
+- Message history with timestamps and sender roles
+- Dynamic unread message counting
+
 ---
 
 ## 🎨 UI/UX Patterns
@@ -401,11 +408,18 @@ menu_items/{itemId}/{timestamp}.jpg
 | `main.dart` | App entry point, Firebase init Firebase Storage test, Provider setup |
 | `firebase_options.dart` | Platform-specific Firebase configuration (auto-generated) |
 | `MODELS.md` | Detailed documentation of Firestore data modeling |
+| `CHAT.md` | Documentation for the Admin-to-User support chat system |
 | `auth_service.dart` | Authentication logic, session management |
 | `user_profile_service.dart` | Firestore user profile streaming and updates |
 | `menu_item_service.dart` | Menu CRUD operations, Firestore queries, filtering |
+| `cart_service.dart` | Real-time shopping cart management via Firestore |
+| `favorites_service.dart` | User-specific favorite items management |
 | `storage_service.dart` | Image uploads, downloads, deletions with timeouts |
 | `menu_page.dart` | 2-column menu grid layout |
+| `cart_page.dart` | User shopping cart with quantity management |
+| `favorites_page.dart` | List of user's bookmarked menu items |
+| `support_chat_page.dart` | Real-time messaging between user and admin |
+| `admin_chat_list_page.dart` | Admin dashboard for all support threads |
 | `menu_item_detail_page.dart` | Item details with image carousel |
 | `add_menu_item_page.dart` | Form to create/edit menu items with image picker |
 | `app_theme.dart` | Material 3 theme configuration |

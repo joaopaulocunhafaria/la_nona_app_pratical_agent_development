@@ -73,6 +73,7 @@ class UserProfile {
   final UserAddress address;
   final bool onboardingCompleted;
   final bool isAdmin;
+  final String role;
   final DateTime? createdAt;
   final DateTime? updatedAt;
 
@@ -85,6 +86,7 @@ class UserProfile {
     required this.address,
     required this.onboardingCompleted,
     this.isAdmin = false,
+    this.role = 'cliente',
     this.createdAt,
     this.updatedAt,
   });
@@ -100,6 +102,7 @@ class UserProfile {
     UserAddress? address,
     bool? onboardingCompleted,
     bool? isAdmin,
+    String? role,
     DateTime? createdAt,
     DateTime? updatedAt,
   }) {
@@ -112,6 +115,7 @@ class UserProfile {
       address: address ?? this.address,
       onboardingCompleted: onboardingCompleted ?? this.onboardingCompleted,
       isAdmin: isAdmin ?? this.isAdmin,
+      role: role ?? this.role,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );
@@ -127,6 +131,7 @@ class UserProfile {
       'address': address.toMap(),
       'onboardingCompleted': onboardingCompleted,
       'isAdmin': isAdmin,
+      'role': role,
       'createdAt': createdAt != null ? Timestamp.fromDate(createdAt!) : null,
       'updatedAt': updatedAt != null ? Timestamp.fromDate(updatedAt!) : null,
     };
@@ -157,7 +162,8 @@ class UserProfile {
       provider: (data['provider'] ?? 'google').toString(),
       address: UserAddress.fromMap(addressData),
       onboardingCompleted: data['onboardingCompleted'] == true,
-      isAdmin: data['isAdmin'] == true,
+      isAdmin: data['isAdmin'] == true || data['role'] == 'admin',
+      role: (data['role'] ?? (data['isAdmin'] == true ? 'admin' : 'cliente')).toString(),
       createdAt: _parseTimestamp(data['createdAt']),
       updatedAt: _parseTimestamp(data['updatedAt']),
     );

@@ -112,6 +112,7 @@ class UserProfileService extends ChangeNotifier {
           ).toMap(),
           'onboardingCompleted': false,
           'isAdmin': false,
+          'role': 'cliente',
           'createdAt': FieldValue.serverTimestamp(),
           'updatedAt': FieldValue.serverTimestamp(),
         });
@@ -198,6 +199,35 @@ class UserProfileService extends ChangeNotifier {
       });
     } catch (e) {
       _setError('Erro ao salvar endereço: $e');
+      rethrow;
+    } finally {
+      _setLoading(false);
+    }
+  }
+
+  Stream<List<UserProfile>> getUsersStream() {
+    return _firestore
+        .collection(usersCollection)
+        .orderBy('name')
+        .snapshots()
+        .map((snapshot) {
+          return snapshot.docs.map((doc) => UserProfile.fromDoc(doc)).toList();
+        });
+  }
+
+  Future<void> updateUserRole(String uid, String newRole) async {
+    _setLoading(true);
+    _setError(null);
+
+    try {
+      final isAdmin = newRole == 'admin';
+      await _userDoc(uid).update({
+        'role': newRole,
+        'isAdmin': isAdmin,
+        'updatedAt': FieldValue.serverTimestamp(),
+      });
+    } catch (e) {
+      _setError('Erro ao atualizar cargo do usuário: $e');
       rethrow;
     } finally {
       _setLoading(false);

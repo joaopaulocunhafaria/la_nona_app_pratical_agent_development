@@ -4,9 +4,10 @@ This document describes the data structure and modeling used in the Firebase Fir
 
 ## 🗄️ Collections Overview
 
-The database is structured into two main root collections:
+The database is structured into three main root collections:
 1. `users`: Stores user profile information, including roles and addresses.
 2. `menu_items`: Stores the restaurant's catalog items.
+3. `chats`: Stores active support conversations between users and administrators (see [CHAT.md](./CHAT.md)).
 
 ---
 
