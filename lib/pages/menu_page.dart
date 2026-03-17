@@ -3,6 +3,8 @@ import 'package:provider/provider.dart';
 import 'package:la_nona/data/models/menu_item.dart';
 import 'package:la_nona/data/services/menu_item_service.dart';
 import 'package:la_nona/services/user_profile_service.dart';
+import 'package:la_nona/services/cart_service.dart';
+import 'package:la_nona/services/favorites_service.dart';
 import 'package:la_nona/pages/menu_item_detail_page.dart';
 import 'package:la_nona/pages/add_menu_item_page.dart';
 import 'package:la_nona/theme/app_colors.dart';
@@ -186,6 +188,31 @@ class _MenuPageState extends State<MenuPage> {
                             ),
                           ),
                   ),
+                  // Botão de Favorito
+                  Positioned(
+                    top: 4,
+                    left: 4,
+                    child: Consumer<FavoritesService>(
+                      builder: (context, favoritesService, _) {
+                        final isFavorite = favoritesService.isFavorite(item.id);
+                        return GestureDetector(
+                          onTap: () => favoritesService.toggleFavorite(item),
+                          child: Container(
+                            padding: const EdgeInsets.all(4),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withOpacity(0.8),
+                              shape: BoxShape.circle,
+                            ),
+                            child: Icon(
+                              isFavorite ? Icons.favorite : Icons.favorite_border,
+                              size: 18,
+                              color: isFavorite ? Colors.red : Colors.grey,
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
                   if (isAdmin)
                     Positioned(
                       top: 4,
@@ -234,17 +261,7 @@ class _MenuPageState extends State<MenuPage> {
                   ),
                   const SizedBox(height: 4),
 
-                  /// Categoria
-                  Text(
-                    item.category,
-                    style: const TextStyle(
-                      fontSize: 12,
-                      color: AppColors.textSecondary,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-
-                  /// Preço
+                  /// Preço e Botão Adicionar
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
@@ -256,7 +273,32 @@ class _MenuPageState extends State<MenuPage> {
                           color: AppColors.secondaryBase,
                         ),
                       ),
-                      if (!item.available)
+                      if (item.available)
+                        GestureDetector(
+                          onTap: () {
+                            context.read<CartService>().addToCart(item);
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text('${item.name} adicionado ao carrinho'),
+                                duration: const Duration(seconds: 1),
+                                behavior: SnackBarBehavior.floating,
+                              ),
+                            );
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.all(4),
+                            decoration: const BoxDecoration(
+                              color: AppColors.secondaryBase,
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(
+                              Icons.add_shopping_cart,
+                              size: 16,
+                              color: Colors.white,
+                            ),
+                          ),
+                        )
+                      else
                         const Text(
                           'Falta',
                           style: TextStyle(

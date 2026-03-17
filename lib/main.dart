@@ -4,14 +4,14 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:la_nona/services/auth_service.dart';
 import 'package:la_nona/services/user_profile_service.dart';
+import 'package:la_nona/services/cart_service.dart';
+import 'package:la_nona/services/favorites_service.dart';
 import 'package:la_nona/theme/app_theme.dart';
 import 'package:la_nona/widgets/auth_check.dart';
-import 'package:la_nona/data/services/storage_service.dart';
 import 'firebase_options.dart';
 
 void main() async {
   // Garante que as bindings do Flutter estejam inicializadas
-  // necessário para operações assíncronas antes de runApp
   WidgetsFlutterBinding.ensureInitialized();
 
   // Configurar handler para erros globais não capturados
@@ -56,6 +56,10 @@ class MyApp extends StatelessWidget {
         ),
         // Provider para UserProvider (gerencia dados do usuário)
         ChangeNotifierProvider(create: (_) => UserProvider()),
+        // Provider para CartService
+        ChangeNotifierProvider(create: (_) => CartService()),
+        // Provider para FavoritesService
+        ChangeNotifierProvider(create: (_) => FavoritesService()),
       ],
       child: MaterialApp(
         title: 'La Nonna',

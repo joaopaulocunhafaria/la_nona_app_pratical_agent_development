@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:la_nona/data/models/menu_item.dart';
+import 'package:la_nona/services/cart_service.dart';
+import 'package:la_nona/services/favorites_service.dart';
 import 'package:la_nona/theme/app_colors.dart';
 
 /// Página que exibe os detalhes completos de um item do cardápio
@@ -37,6 +40,20 @@ class _MenuItemDetailPageState extends State<MenuItemDetailPage> {
       appBar: AppBar(
         title: const Text('Detalhes do Item'),
         elevation: 0,
+        actions: [
+          Consumer<FavoritesService>(
+            builder: (context, favoritesService, _) {
+              final isFavorite = favoritesService.isFavorite(widget.item.id);
+              return IconButton(
+                icon: Icon(
+                  isFavorite ? Icons.favorite : Icons.favorite_border,
+                  color: isFavorite ? Colors.red : null,
+                ),
+                onPressed: () => favoritesService.toggleFavorite(widget.item),
+              );
+            },
+          ),
+        ],
       ),
       body: SingleChildScrollView(
         child: Column(
@@ -208,10 +225,12 @@ class _MenuItemDetailPageState extends State<MenuItemDetailPage> {
               child: SafeArea(
                 child: ElevatedButton.icon(
                   onPressed: () {
+                    context.read<CartService>().addToCart(widget.item);
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Item adicionado ao carrinho'),
-                        duration: Duration(seconds: 2),
+                      SnackBar(
+                        content: Text('${widget.item.name} adicionado ao carrinho'),
+                        duration: const Duration(seconds: 2),
+                        behavior: SnackBarBehavior.floating,
                       ),
                     );
                   },

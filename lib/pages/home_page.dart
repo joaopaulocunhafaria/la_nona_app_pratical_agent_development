@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:la_nona/models/user_profile.dart';
 import 'package:la_nona/pages/menu_page.dart';
+import 'package:la_nona/pages/cart_page.dart';
+import 'package:la_nona/pages/favorites_page.dart';
 import 'package:la_nona/services/address_form_service.dart';
 import 'package:la_nona/services/auth_service.dart';
 import 'package:la_nona/services/session_service.dart';
@@ -79,9 +81,6 @@ class _HomePageState extends State<HomePage> {
           final displayPhoto = profile?.photoUrl.isNotEmpty == true
               ? profile!.photoUrl
               : user?.photoURL;
-          final shortUid = user?.uid != null && user!.uid.length > 8
-              ? '${user.uid.substring(0, 8)}...'
-              : (user?.uid ?? 'Não definido');
 
           return SingleChildScrollView(
             child: Padding(
@@ -224,10 +223,9 @@ class _HomePageState extends State<HomePage> {
                     'Meus Pedidos',
                     'Veja e acompanhe seus pedidos',
                     () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Funcionalidade em desenvolvimento'),
-                          duration: Duration(seconds: 2),
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (context) => const CartPage(),
                         ),
                       );
                     },
@@ -239,10 +237,9 @@ class _HomePageState extends State<HomePage> {
                     'Favoritos',
                     'Seus pratos favoritos',
                     () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Funcionalidade em desenvolvimento'),
-                          duration: Duration(seconds: 2),
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (context) => const FavoritesPage(),
                         ),
                       );
                     },

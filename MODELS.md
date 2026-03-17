@@ -43,6 +43,30 @@ Each document is identified by the Firebase Authentication UID (`uid`).
 
 ---
 
+## 🛒 Cart Subcollection (`users/{uid}/cart`)
+
+Stores the items the user has added to their shopping cart.
+
+### Document Structure: `users/{uid}/cart/{itemId}`
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `menuItem` | Map | Snapshot of the MenuItem data |
+| `quantity` | Number (Integer) | Number of units of this item |
+| `addedAt` | Timestamp | When the item was added to the cart |
+
+---
+
+## ❤️ Favorites Subcollection (`users/{uid}/favorites`)
+
+Stores the user's favorite menu items.
+
+### Document Structure: `users/{uid}/favorites/{itemId}`
+
+The document fields are a mirror of the `menu_items` structure to allow quick display without extra fetches.
+
+---
+
 ## 🍴 Menu Items Collection (`menu_items`)
 
 Stores the catalog of available food and drinks.
