@@ -129,33 +129,7 @@ la_nona/
 
 ## 🔐 Firebase Configuration
 
-### Firestore Database Structure
-```
-users/{uid}
-├── name: String
-├── email: String
-├── photoUrl: String
-├── address: {
-│   ├── street: String
-│   ├── number: String
-│   ├── complement: String
-│   ├── neighborhood: String
-│   ├── city: String
-│   ├── state: String
-│   ├── zipCode: String
-│   └── updatedAt: Timestamp
-├── onboardingCompleted: Boolean
-└── createdAt: Timestamp
-
-menu_items/{itemId}
-├── name: String
-├── description: String
-├── category: String (predefined: appetizer, main, dessert, drink, other)
-├── price: Double
-├── imageUrls: List<String> (stored in Firebase Storage)
-├── isAvailable: Boolean
-└── createdAt: Timestamp
-```
+Detailed information about the data modeling and Firestore structure can be found in the [MODELS.md](./MODELS.md) file.
 
 ### Firebase Storage Structure
 ```
@@ -426,6 +400,7 @@ menu_items/{itemId}/{timestamp}.jpg
 |------|---------|
 | `main.dart` | App entry point, Firebase init Firebase Storage test, Provider setup |
 | `firebase_options.dart` | Platform-specific Firebase configuration (auto-generated) |
+| `MODELS.md` | Detailed documentation of Firestore data modeling |
 | `auth_service.dart` | Authentication logic, session management |
 | `user_profile_service.dart` | Firestore user profile streaming and updates |
 | `menu_item_service.dart` | Menu CRUD operations, Firestore queries, filtering |
