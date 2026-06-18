@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<network-security-config>
+    <!-- Configuração padrão para o domínio -->
+    <domain-config cleartextTrafficPermitted="false">
+        <domain includeSubdomains="true">firebasestorage.googleapis.com</domain>
+        <domain includeSubdomains="true">la-nona-cafeteria.firebasestorage.app</domain>
+        <trust-anchors>
+            <certificates src="system" />
+            <certificates src="user" />
+        </trust-anchors>
+    </domain-config>
+
+    <!-- Permitir cleartext apenas para localhost (para testes/debug) -->
+    <domain-config cleartextTrafficPermitted="true">
+        <domain includeSubdomains="true">localhost</domain>
+        <domain includeSubdomains="true">127.0.0.1</domain>
+    </domain-config>
+
+    <!-- Política de certificados PIN para Firebase (opcional, aumenta segurança) -->
+    <!-- <pin-set expiration="2026-12-31">
+        <pin digest="SHA-256">...</pin>
+    </pin-set> -->
+</network-security-config>

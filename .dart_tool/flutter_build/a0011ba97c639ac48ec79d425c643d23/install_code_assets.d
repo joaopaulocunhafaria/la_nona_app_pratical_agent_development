@@ -1,0 +1,1 @@
+ /home/joao/WorkSpaces/ws-android-flutter/la_nona/.dart_tool/flutter_build/a0011ba97c639ac48ec79d425c643d23/native_assets.json: 

@@ -1,0 +1,22 @@
+// Arquivo gerado pelo `flutterfire configure`. NÃO versionar o arquivo real.
+// Copie este arquivo, renomeie para firebase_options.dart e preencha com
+// seus valores reais obtidos no Firebase Console.
+//
+// ATENÇÃO: Nunca commite lib/firebase_options.dart no git.
+//          Este arquivo de exemplo (firebase_options.dart.example) é seguro para versionar.
+
+import 'package:firebase_core/firebase_core.dart' show FirebaseOptions;
+
+class DefaultFirebaseOptions {
+  static FirebaseOptions get currentPlatform {
+    return android;
+  }
+
+  static const FirebaseOptions android = FirebaseOptions(
+    apiKey: 'SUA_API_KEY_AQUI',
+    appId: '1:SEU_PROJECT_NUMBER:android:SEU_HASH',
+    messagingSenderId: 'SEU_PROJECT_NUMBER',
+    projectId: 'SEU_PROJECT_ID',
+    storageBucket: 'SEU_PROJECT_ID.firebasestorage.app',
+  );
+}
