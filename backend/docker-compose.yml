@@ -1,0 +1,20 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: la_nona_postgres
+    environment:
+      POSTGRES_DB: la_nona
+      POSTGRES_USER: icismep
+      POSTGRES_PASSWORD: icismep
+    ports:
+      - "5432:5432"
+    volumes:
+      - la_nona_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U icismep -d la_nona"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  la_nona_postgres_data:
