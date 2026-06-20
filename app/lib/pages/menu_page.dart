@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:la_nona/data/api/app_image.dart';
 import 'package:la_nona/data/models/menu_item.dart';
 import 'package:la_nona/data/services/menu_item_service.dart';
 import 'package:la_nona/services/user_profile_service.dart';
@@ -19,6 +20,47 @@ class MenuPage extends StatefulWidget {
 
 class _MenuPageState extends State<MenuPage> {
   final MenuItemService _menuItemService = MenuItemService();
+  late Future<List<MenuItem>> _menuFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _menuFuture = _menuItemService.getMenuItems();
+  }
+
+  void _reload() {
+    setState(() {
+      _menuFuture = _menuItemService.getMenuItems();
+    });
+  }
+
+  void _openAddItem({MenuItem? editingItem}) {
+    Navigator.of(context)
+        .push(
+          MaterialPageRoute(
+            builder: (context) => AddMenuItemPage(editingItem: editingItem),
+          ),
+        )
+        .then((_) => _reload());
+  }
+
+  Future<void> _addToCart(BuildContext context, MenuItem item) async {
+    final messenger = ScaffoldMessenger.of(context);
+    try {
+      await context.read<CartService>().addToCart(item);
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text('${item.name} adicionado ao carrinho'),
+          duration: const Duration(seconds: 1),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    } catch (e) {
+      messenger.showSnackBar(
+        SnackBar(content: Text('Erro ao adicionar ao carrinho: $e')),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -32,19 +74,13 @@ class _MenuPageState extends State<MenuPage> {
           if (isAdmin)
             IconButton(
               icon: const Icon(Icons.add),
-              onPressed: () {
-                Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (context) => const AddMenuItemPage(),
-                  ),
-                );
-              },
+              onPressed: () => _openAddItem(),
               tooltip: 'Adicionar item',
             ),
         ],
       ),
-      body: StreamBuilder<List<MenuItem>>(
-        stream: _menuItemService.getMenuItems(),
+      body: FutureBuilder<List<MenuItem>>(
+        future: _menuFuture,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(
@@ -86,13 +122,7 @@ class _MenuPageState extends State<MenuPage> {
                   if (isAdmin) ...[
                     const SizedBox(height: 16),
                     ElevatedButton.icon(
-                      onPressed: () {
-                        Navigator.of(context).push(
-                          MaterialPageRoute(
-                            builder: (context) => const AddMenuItemPage(),
-                          ),
-                        );
-                      },
+                      onPressed: () => _openAddItem(),
                       icon: const Icon(Icons.add),
                       label: const Text('Adicionar Primeiro Item'),
                     ),
@@ -149,44 +179,17 @@ class _MenuPageState extends State<MenuPage> {
                           const BorderRadius.vertical(top: Radius.circular(12)),
                       color: Colors.grey[200],
                     ),
-                    child: item.imageUrls.isNotEmpty
-                        ? ClipRRect(
-                            borderRadius: const BorderRadius.vertical(
-                              top: Radius.circular(12),
-                            ),
-                            child: Image.network(
-                              item.imageUrls.first,
-                              fit: BoxFit.cover,
-                              errorBuilder: (context, error, stackTrace) {
-                                return const Center(
-                                  child: Icon(
-                                    Icons.broken_image,
-                                    color: Colors.grey,
-                                    size: 32,
-                                  ),
-                                );
-                              },
-                              loadingBuilder: (context, child, loadingProgress) {
-                                if (loadingProgress == null) return child;
-                                return Center(
-                                  child: CircularProgressIndicator(
-                                    value: loadingProgress.expectedTotalBytes !=
-                                            null
-                                        ? loadingProgress.cumulativeBytesLoaded /
-                                            loadingProgress.expectedTotalBytes!
-                                        : null,
-                                  ),
-                                );
-                              },
-                            ),
-                          )
-                        : const Center(
-                            child: Icon(
-                              Icons.image_not_supported,
-                              color: Colors.grey,
-                              size: 48,
-                            ),
-                          ),
+                    child: ClipRRect(
+                      borderRadius: const BorderRadius.vertical(
+                        top: Radius.circular(12),
+                      ),
+                      child: SizedBox.expand(
+                        child: AppImage(
+                          item.imageUrls.isNotEmpty ? item.imageUrls.first : null,
+                          fit: BoxFit.cover,
+                        ),
+                      ),
+                    ),
                   ),
                   // Botão de Favorito
                   Positioned(
@@ -222,13 +225,7 @@ class _MenuPageState extends State<MenuPage> {
                           _buildAdminActionButton(
                             icon: Icons.edit,
                             color: Colors.blue,
-                            onTap: () {
-                              Navigator.of(context).push(
-                                MaterialPageRoute(
-                                  builder: (context) => AddMenuItemPage(editingItem: item),
-                                ),
-                              );
-                            },
+                            onTap: () => _openAddItem(editingItem: item),
                           ),
                           const SizedBox(width: 4),
                           _buildAdminActionButton(
@@ -275,16 +272,7 @@ class _MenuPageState extends State<MenuPage> {
                       ),
                       if (item.available)
                         GestureDetector(
-                          onTap: () {
-                            context.read<CartService>().addToCart(item);
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text('${item.name} adicionado ao carrinho'),
-                                duration: const Duration(seconds: 1),
-                                behavior: SnackBarBehavior.floating,
-                              ),
-                            );
-                          },
+                          onTap: () => _addToCart(context, item),
                           child: Container(
                             padding: const EdgeInsets.all(4),
                             decoration: const BoxDecoration(
@@ -356,6 +344,7 @@ class _MenuPageState extends State<MenuPage> {
               Navigator.pop(context);
               try {
                 await _menuItemService.deleteMenuItem(item.id);
+                _reload();
                 if (context.mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(content: Text('Item excluído com sucesso')),

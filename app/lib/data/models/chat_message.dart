@@ -1,5 +1,4 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
-
+/// Mensagem do chat de suporte (espelha o `ChatMessageResponse`).
 class ChatMessage {
   final String id;
   final String senderId;
@@ -15,22 +14,14 @@ class ChatMessage {
     required this.sentAt,
   });
 
-  Map<String, dynamic> toMap() {
-    return {
-      'senderId': senderId,
-      'text': text,
-      'isAdmin': isAdmin,
-      'sentAt': Timestamp.fromDate(sentAt),
-    };
-  }
-
-  factory ChatMessage.fromMap(Map<String, dynamic> map, String id) {
+  factory ChatMessage.fromJson(Map<String, dynamic> json) {
     return ChatMessage(
-      id: id,
-      senderId: map['senderId'] ?? '',
-      text: map['text'] ?? '',
-      isAdmin: map['isAdmin'] ?? false,
-      sentAt: (map['sentAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
+      id: (json['id'] ?? '').toString(),
+      senderId: (json['senderId'] ?? '').toString(),
+      text: (json['text'] ?? '').toString(),
+      isAdmin: json['isAdmin'] as bool? ?? false,
+      sentAt: DateTime.tryParse((json['sentAt'] ?? '').toString())?.toLocal() ??
+          DateTime.now(),
     );
   }
 }

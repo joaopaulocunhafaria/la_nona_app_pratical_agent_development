@@ -1,68 +1,65 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
+
+import 'package:la_nona/data/api/api_client.dart';
 import 'package:la_nona/data/models/menu_item.dart';
 
+/// Favoritos do usuário autenticado, via REST (`/api/favorites`).
 class FavoritesService extends ChangeNotifier {
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-  final FirebaseAuth _auth = FirebaseAuth.instance;
+  final ApiClient _api = ApiClient.instance;
 
-  Set<String> _favoriteIds = {};
   List<MenuItem> _favorites = [];
-  bool _isLoading = false;
+  Set<String> _favoriteIds = {};
+  bool _loaded = false;
+  bool _loading = false;
 
-  Set<String> get favoriteIds => _favoriteIds;
   List<MenuItem> get favorites => _favorites;
-  bool get isLoading => _isLoading;
+  Set<String> get favoriteIds => _favoriteIds;
 
-  FavoritesService() {
-    _init();
+  /// Chamado pelo provider (durante o build) quando a autenticação muda.
+  void onAuthChanged(bool authenticated) {
+    if (authenticated) {
+      if (!_loaded && !_loading) Future.microtask(load);
+    } else {
+      if (_loaded || _favorites.isNotEmpty) Future.microtask(_reset);
+    }
   }
 
-  void _init() {
-    _auth.authStateChanges().listen((user) {
-      if (user != null) {
-        _listenToFavorites(user.uid);
-      } else {
-        _favoriteIds = {};
-        _favorites = [];
-        notifyListeners();
-      }
-    });
+  void _reset() {
+    _favorites = [];
+    _favoriteIds = {};
+    _loaded = false;
+    notifyListeners();
   }
 
-  void _listenToFavorites(String uid) {
-    _firestore
-        .collection('users')
-        .doc(uid)
-        .collection('favorites')
-        .snapshots()
-        .listen((snapshot) {
-      _favoriteIds = snapshot.docs.map((doc) => doc.id).toSet();
-      _favorites = snapshot.docs.map((doc) => MenuItem.fromMap(doc.data(), doc.id)).toList();
+  bool isFavorite(String itemId) => _favoriteIds.contains(itemId);
+
+  Future<void> load() async {
+    _loading = true;
+    try {
+      final response = await _api.get('/favorites');
+      _favorites = (response as List<dynamic>)
+          .map((e) => MenuItem.fromJson(e as Map<String, dynamic>))
+          .toList();
+      _favoriteIds = _favorites.map((item) => item.id).toSet();
+      _loaded = true;
       notifyListeners();
-    });
-  }
-
-  bool isFavorite(String itemId) {
-    return _favoriteIds.contains(itemId);
+    } catch (e) {
+      debugPrint('Erro ao carregar favoritos: $e');
+    } finally {
+      _loading = false;
+    }
   }
 
   Future<void> toggleFavorite(MenuItem item) async {
-    final user = _auth.currentUser;
-    if (user == null) return;
-
-    try {
-      final docRef = _firestore.collection('users').doc(user.uid).collection('favorites').doc(item.id);
-      
-      if (_favoriteIds.contains(item.id)) {
-        await docRef.delete();
-      } else {
-        await docRef.set(item.toMap()..['id'] = item.id);
-      }
-    } catch (e) {
-      debugPrint('Error toggling favorite: $e');
-      rethrow;
+    if (_favoriteIds.contains(item.id)) {
+      await _api.delete('/favorites/${item.id}');
+      _favorites = _favorites.where((f) => f.id != item.id).toList();
+      _favoriteIds = _favoriteIds.where((id) => id != item.id).toSet();
+    } else {
+      await _api.post('/favorites/${item.id}');
+      _favorites = [..._favorites, item];
+      _favoriteIds = {..._favoriteIds, item.id};
     }
+    notifyListeners();
   }
 }

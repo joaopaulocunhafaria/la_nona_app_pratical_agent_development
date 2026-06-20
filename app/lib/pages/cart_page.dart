@@ -1,10 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:la_nona/data/api/app_image.dart';
 import 'package:la_nona/services/cart_service.dart';
 import 'package:la_nona/theme/app_colors.dart';
 
 class CartPage extends StatelessWidget {
   const CartPage({super.key});
+
+  Future<void> _runCartAction(BuildContext context, Future<void> Function() action) async {
+    final messenger = ScaffoldMessenger.of(context);
+    try {
+      await action();
+    } catch (e) {
+      messenger.showSnackBar(
+        SnackBar(content: Text('Erro ao atualizar carrinho: $e')),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -57,19 +69,14 @@ class CartPage extends StatelessWidget {
                           children: [
                             ClipRRect(
                               borderRadius: BorderRadius.circular(8),
-                              child: item.menuItem.imageUrls.isNotEmpty
-                                  ? Image.network(
-                                      item.menuItem.imageUrls.first,
-                                      width: 80,
-                                      height: 80,
-                                      fit: BoxFit.cover,
-                                    )
-                                  : Container(
-                                      width: 80,
-                                      height: 80,
-                                      color: Colors.grey[200],
-                                      child: const Icon(Icons.image_not_supported),
-                                    ),
+                              child: AppImage(
+                                item.menuItem.imageUrls.isNotEmpty
+                                    ? item.menuItem.imageUrls.first
+                                    : null,
+                                width: 80,
+                                height: 80,
+                                fit: BoxFit.cover,
+                              ),
                             ),
                             const SizedBox(width: 16),
                             Expanded(
@@ -96,9 +103,12 @@ class CartPage extends StatelessWidget {
                                     children: [
                                       _buildQuantityButton(
                                         icon: Icons.remove,
-                                        onPressed: () => cartService.updateQuantity(
-                                          item.id,
-                                          item.quantity - 1,
+                                        onPressed: () => _runCartAction(
+                                          context,
+                                          () => cartService.updateQuantity(
+                                            item.menuItem.id,
+                                            item.quantity - 1,
+                                          ),
                                         ),
                                       ),
                                       Padding(
@@ -112,15 +122,21 @@ class CartPage extends StatelessWidget {
                                       ),
                                       _buildQuantityButton(
                                         icon: Icons.add,
-                                        onPressed: () => cartService.updateQuantity(
-                                          item.id,
-                                          item.quantity + 1,
+                                        onPressed: () => _runCartAction(
+                                          context,
+                                          () => cartService.updateQuantity(
+                                            item.menuItem.id,
+                                            item.quantity + 1,
+                                          ),
                                         ),
                                       ),
                                       const Spacer(),
                                       IconButton(
                                         icon: const Icon(Icons.delete_outline, color: Colors.red),
-                                        onPressed: () => cartService.removeFromCart(item.id),
+                                        onPressed: () => _runCartAction(
+                                          context,
+                                          () => cartService.removeFromCart(item.menuItem.id),
+                                        ),
                                       ),
                                     ],
                                   ),

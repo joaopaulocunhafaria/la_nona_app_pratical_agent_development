@@ -1,149 +1,108 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
+
+import 'package:la_nona/data/api/api_client.dart';
 import 'package:la_nona/data/models/menu_item.dart';
 
+/// Linha do carrinho (espelha o `CartItemResponse`). [menuItem] traz os dados
+/// atuais do item (o backend faz JOIN; o preço é sempre o preço atual).
 class CartItem {
   final String id;
   final MenuItem menuItem;
   final int quantity;
-  final DateTime addedAt;
+  final double subtotal;
+  final DateTime? addedAt;
 
   CartItem({
     required this.id,
     required this.menuItem,
     required this.quantity,
-    required this.addedAt,
+    required this.subtotal,
+    this.addedAt,
   });
 
-  Map<String, dynamic> toMap() {
-    return {
-      'menuItem': menuItem.toMap(),
-      'quantity': quantity,
-      'addedAt': Timestamp.fromDate(addedAt),
-    };
-  }
-
-  factory CartItem.fromMap(Map<String, dynamic> map, String id) {
+  factory CartItem.fromJson(Map<String, dynamic> json) {
     return CartItem(
-      id: id,
-      menuItem: MenuItem.fromMap(map['menuItem'], map['menuItem']['id'] ?? ''),
-      quantity: map['quantity'] ?? 1,
-      addedAt: (map['addedAt'] as Timestamp).toDate(),
+      id: (json['id'] ?? '').toString(),
+      menuItem: MenuItem.fromJson(json['menuItem'] as Map<String, dynamic>),
+      quantity: (json['quantity'] as num?)?.toInt() ?? 1,
+      subtotal: (json['subtotal'] as num?)?.toDouble() ?? 0.0,
+      addedAt: DateTime.tryParse((json['addedAt'] ?? '').toString()),
     );
   }
 }
 
+/// Carrinho do usuário autenticado, via REST (`/api/cart`).
 class CartService extends ChangeNotifier {
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-  final FirebaseAuth _auth = FirebaseAuth.instance;
+  final ApiClient _api = ApiClient.instance;
 
   List<CartItem> _items = [];
+  double _total = 0;
   bool _isLoading = false;
+  bool _loaded = false;
 
   List<CartItem> get items => _items;
+  double get total => _total;
   bool get isLoading => _isLoading;
-  double get total => _items.fold(0, (sum, item) => sum + (item.menuItem.price * item.quantity));
 
-  CartService() {
-    _init();
+  /// Chamado pelo provider (durante o build) quando a autenticação muda.
+  /// O trabalho é adiado para fora do ciclo de build atual.
+  void onAuthChanged(bool authenticated) {
+    if (authenticated) {
+      if (!_loaded && !_isLoading) Future.microtask(load);
+    } else {
+      if (_loaded || _items.isNotEmpty) Future.microtask(_reset);
+    }
   }
 
-  void _init() {
-    _auth.authStateChanges().listen((user) {
-      if (user != null) {
-        _listenToCart(user.uid);
-      } else {
-        _items = [];
-        notifyListeners();
-      }
-    });
+  void _reset() {
+    _items = [];
+    _total = 0;
+    _loaded = false;
+    notifyListeners();
   }
 
-  void _listenToCart(String uid) {
-    _firestore
-        .collection('users')
-        .doc(uid)
-        .collection('cart')
-        .orderBy('addedAt', descending: true)
-        .snapshots()
-        .listen((snapshot) {
-      _items = snapshot.docs.map((doc) => CartItem.fromMap(doc.data(), doc.id)).toList();
+  void _apply(dynamic cartJson) {
+    final json = cartJson as Map<String, dynamic>;
+    _items = (json['items'] as List<dynamic>? ?? const [])
+        .map((e) => CartItem.fromJson(e as Map<String, dynamic>))
+        .toList();
+    _total = (json['total'] as num?)?.toDouble() ?? 0.0;
+    _loaded = true;
+    notifyListeners();
+  }
+
+  Future<void> load() async {
+    _isLoading = true;
+    notifyListeners();
+    try {
+      _apply(await _api.get('/cart'));
+    } catch (e) {
+      debugPrint('Erro ao carregar carrinho: $e');
+      rethrow;
+    } finally {
+      _isLoading = false;
       notifyListeners();
-    });
-  }
-
-  Future<void> addToCart(MenuItem menuItem) async {
-    final user = _auth.currentUser;
-    if (user == null) return;
-
-    try {
-      final cartRef = _firestore.collection('users').doc(user.uid).collection('cart');
-      
-      // Check if item already exists
-      final existing = await cartRef.doc(menuItem.id).get();
-      
-      if (existing.exists) {
-        await cartRef.doc(menuItem.id).update({
-          'quantity': FieldValue.increment(1),
-          'addedAt': FieldValue.serverTimestamp(),
-        });
-      } else {
-        await cartRef.doc(menuItem.id).set({
-          'menuItem': menuItem.toMap()..['id'] = menuItem.id,
-          'quantity': 1,
-          'addedAt': FieldValue.serverTimestamp(),
-        });
-      }
-    } catch (e) {
-      debugPrint('Error adding to cart: $e');
-      rethrow;
     }
   }
 
-  Future<void> removeFromCart(String itemId) async {
-    final user = _auth.currentUser;
-    if (user == null) return;
-
-    try {
-      await _firestore.collection('users').doc(user.uid).collection('cart').doc(itemId).delete();
-    } catch (e) {
-      debugPrint('Error removing from cart: $e');
-      rethrow;
-    }
+  Future<void> addToCart(MenuItem item, {int quantity = 1}) async {
+    _apply(await _api.post('/cart/items', body: {
+      'menuItemId': item.id,
+      'quantity': quantity,
+    }));
   }
 
-  Future<void> updateQuantity(String itemId, int quantity) async {
-    final user = _auth.currentUser;
-    if (user == null) return;
+  /// `quantity <= 0` remove o item (regra do backend).
+  Future<void> updateQuantity(String menuItemId, int quantity) async {
+    _apply(await _api.put('/cart/items/$menuItemId', body: {'quantity': quantity}));
+  }
 
-    try {
-      if (quantity <= 0) {
-        await removeFromCart(itemId);
-      } else {
-        await _firestore.collection('users').doc(user.uid).collection('cart').doc(itemId).update({
-          'quantity': quantity,
-        });
-      }
-    } catch (e) {
-      debugPrint('Error updating quantity: $e');
-      rethrow;
-    }
+  Future<void> removeFromCart(String menuItemId) async {
+    _apply(await _api.delete('/cart/items/$menuItemId'));
   }
 
   Future<void> clearCart() async {
-    final user = _auth.currentUser;
-    if (user == null) return;
-
-    try {
-      final cartRef = _firestore.collection('users').doc(user.uid).collection('cart');
-      final snapshot = await cartRef.get();
-      for (var doc in snapshot.docs) {
-        await doc.reference.delete();
-      }
-    } catch (e) {
-      debugPrint('Error clearing cart: $e');
-      rethrow;
-    }
+    await _api.delete('/cart');
+    _reset();
   }
 }

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:la_nona/data/api/app_image.dart';
 import 'package:la_nona/data/models/menu_item.dart';
 import 'package:la_nona/services/cart_service.dart';
 import 'package:la_nona/services/favorites_service.dart';
@@ -32,6 +33,24 @@ class _MenuItemDetailPageState extends State<MenuItemDetailPage> {
   void dispose() {
     _pageController.dispose();
     super.dispose();
+  }
+
+  Future<void> _addToCart(BuildContext context) async {
+    final messenger = ScaffoldMessenger.of(context);
+    try {
+      await context.read<CartService>().addToCart(widget.item);
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text('${widget.item.name} adicionado ao carrinho'),
+          duration: const Duration(seconds: 2),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    } catch (e) {
+      messenger.showSnackBar(
+        SnackBar(content: Text('Erro ao adicionar ao carrinho: $e')),
+      );
+    }
   }
 
   @override
@@ -224,16 +243,7 @@ class _MenuItemDetailPageState extends State<MenuItemDetailPage> {
               ),
               child: SafeArea(
                 child: ElevatedButton.icon(
-                  onPressed: () {
-                    context.read<CartService>().addToCart(widget.item);
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text('${widget.item.name} adicionado ao carrinho'),
-                        duration: const Duration(seconds: 2),
-                        behavior: SnackBarBehavior.floating,
-                      ),
-                    );
-                  },
+                  onPressed: () => _addToCart(context),
                   icon: const Icon(Icons.shopping_cart),
                   label: const Text('Adicionar ao Carrinho'),
                   style: ElevatedButton.styleFrom(
@@ -271,16 +281,14 @@ class _MenuItemDetailPageState extends State<MenuItemDetailPage> {
                   child: InteractiveViewer(
                     minScale: 0.5,
                     maxScale: 4.0,
-                    child: Image.network(
+                    child: AppImage(
                       widget.item.imageUrls[index],
                       fit: BoxFit.contain,
-                      errorBuilder: (context, error, stackTrace) {
-                        return const Icon(
-                          Icons.broken_image,
-                          color: Colors.white,
-                          size: 64,
-                        );
-                      },
+                      placeholder: const Icon(
+                        Icons.broken_image,
+                        color: Colors.white,
+                        size: 64,
+                      ),
                     ),
                   ),
                 ),
@@ -328,29 +336,11 @@ class _MenuItemDetailPageState extends State<MenuItemDetailPage> {
                   color: Colors.grey[200],
                   child: Hero(
                     tag: 'image_$index',
-                    child: Image.network(
-                      widget.item.imageUrls[index],
-                      fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) {
-                        return const Center(
-                          child: Icon(
-                            Icons.broken_image,
-                            color: Colors.grey,
-                            size: 64,
-                          ),
-                        );
-                      },
-                      loadingBuilder: (context, child, loadingProgress) {
-                        if (loadingProgress == null) return child;
-                        return Center(
-                          child: CircularProgressIndicator(
-                            value: loadingProgress.expectedTotalBytes != null
-                                ? loadingProgress.cumulativeBytesLoaded /
-                                    loadingProgress.expectedTotalBytes!
-                                : null,
-                          ),
-                        );
-                      },
+                    child: SizedBox.expand(
+                      child: AppImage(
+                        widget.item.imageUrls[index],
+                        fit: BoxFit.cover,
+                      ),
                     ),
                   ),
                 ),

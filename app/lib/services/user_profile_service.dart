@@ -1,40 +1,58 @@
-import 'dart:async';
 import 'dart:convert';
 
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
+
+import 'package:la_nona/data/api/api_client.dart';
+import 'package:la_nona/data/api/app_image.dart';
 import 'package:la_nona/models/user_profile.dart';
+import 'package:la_nona/services/session_store.dart';
 
+/// Perfil do usuário, endereço e gestão de usuários (admin) contra a API.
+///
+/// Substitui o acesso direto ao Firestore. A consulta de CEP (ViaCEP)
+/// permanece client-side, exatamente como antes.
 class UserProfileService extends ChangeNotifier {
-  UserProfileService({FirebaseFirestore? firestore})
-    : _firestore = firestore ?? FirebaseFirestore.instance;
+  UserProfileService();
 
-  final FirebaseFirestore _firestore;
-
-  static const String usersCollection = 'users';
+  final ApiClient _api = ApiClient.instance;
 
   UserProfile? _profile;
   bool _isLoading = false;
   String? _error;
-  StreamSubscription<DocumentSnapshot<Map<String, dynamic>>>?
-  _profileSubscription;
 
   UserProfile? get profile => _profile;
   bool get isLoading => _isLoading;
   String? get error => _error;
   bool get isAdmin => _profile?.isAdmin ?? false;
 
+  void setProfile(UserProfile profile) {
+    _profile = profile;
+    _error = null;
+    notifyListeners();
+  }
+
+  void clear() {
+    _profile = null;
+    _error = null;
+    _isLoading = false;
+    notifyListeners();
+  }
+
+  void _setLoading(bool value) {
+    _isLoading = value;
+    notifyListeners();
+  }
+
+  // ---------------------------------------------------------------------------
+  // CEP (ViaCEP — inalterado)
+  // ---------------------------------------------------------------------------
+
   static final RegExp _cepRegex = RegExp(r'^\d{8}$');
 
-  String normalizeCep(String cep) {
-    return cep.replaceAll(RegExp(r'\D'), '');
-  }
+  String normalizeCep(String cep) => cep.replaceAll(RegExp(r'\D'), '');
 
-  bool isValidCep(String cep) {
-    return _cepRegex.hasMatch(normalizeCep(cep));
-  }
+  bool isValidCep(String cep) => _cepRegex.hasMatch(normalizeCep(cep));
 
   String formatCep(String cep) {
     final normalized = normalizeCep(cep);
@@ -44,14 +62,12 @@ class UserProfileService extends ChangeNotifier {
 
   Future<UserAddress> fetchAddressByCep(String cep) async {
     final normalized = normalizeCep(cep);
-
     if (!isValidCep(normalized)) {
       throw Exception('CEP inválido. Use 8 dígitos.');
     }
 
     final uri = Uri.parse('https://viacep.com.br/ws/$normalized/json/');
     final response = await http.get(uri);
-
     if (response.statusCode != 200) {
       throw Exception('Falha ao consultar CEP. Tente novamente.');
     }
@@ -72,94 +88,20 @@ class UserProfileService extends ChangeNotifier {
     );
   }
 
-  DocumentReference<Map<String, dynamic>> _userDoc(String uid) {
-    return _firestore.collection(usersCollection).doc(uid);
-  }
+  // ---------------------------------------------------------------------------
+  // Perfil
+  // ---------------------------------------------------------------------------
 
-  void _setLoading(bool value) {
-    _isLoading = value;
+  /// `GET /api/users/me` — confirma a sessão e atualiza o perfil em cache.
+  Future<void> refreshMe() async {
+    final response = await _api.get('/users/me');
+    final user = response as Map<String, dynamic>;
+    _profile = UserProfile.fromJson(user);
+    await SessionStore.instance.saveUser(user);
     notifyListeners();
   }
 
-  void _setError(String? value) {
-    _error = value;
-    notifyListeners();
-  }
-
-  Future<void> syncCurrentUser(User user) async {
-    _setLoading(true);
-    _setError(null);
-
-    try {
-      final docRef = _userDoc(user.uid);
-      final snapshot = await docRef.get();
-
-      if (!snapshot.exists) {
-        await docRef.set({
-          'uid': user.uid,
-          'email': user.email ?? '',
-          'name': user.displayName ?? '',
-          'photoUrl': user.photoURL ?? '',
-          'provider': 'google',
-          'address': const UserAddress(
-            cep: '',
-            rua: '',
-            bairro: '',
-            numero: '',
-            cidade: '',
-            estado: '',
-            complemento: '',
-          ).toMap(),
-          'onboardingCompleted': false,
-          'isAdmin': false,
-          'role': 'cliente',
-          'createdAt': FieldValue.serverTimestamp(),
-          'updatedAt': FieldValue.serverTimestamp(),
-        });
-      } else {
-        await docRef.update({
-          'email': user.email ?? '',
-          'name': user.displayName ?? '',
-          'photoUrl': user.photoURL ?? '',
-          'provider': 'google',
-          'updatedAt': FieldValue.serverTimestamp(),
-        });
-      }
-
-      await watchCurrentUser(user.uid);
-    } catch (e) {
-      _setError('Erro ao sincronizar perfil do usuário: $e');
-      debugPrint('Erro ao sincronizar usuário: $e');
-    } finally {
-      _setLoading(false);
-    }
-  }
-
-  Future<void> watchCurrentUser(String uid) async {
-    await _profileSubscription?.cancel();
-
-    _profileSubscription = _userDoc(uid).snapshots().listen(
-      (doc) {
-        try {
-          if (!doc.exists) {
-            _profile = null;
-          } else {
-            _profile = UserProfile.fromDoc(doc);
-          }
-          _setError(null);
-          notifyListeners();
-        } catch (e, stackTrace) {
-          debugPrint('Erro ao processar perfil do usuário: $e\n$stackTrace');
-          _setError('Erro ao carregar perfil: $e');
-        }
-      },
-      onError: (Object error, StackTrace stackTrace) {
-        debugPrint('Erro na stream do perfil: $error\n$stackTrace');
-        _setError('Erro ao carregar perfil: $error');
-      },
-    );
-  }
-
+  /// `PUT /api/users/me/address` (define `onboardingCompleted = true`).
   Future<void> saveAddress({
     required String cep,
     required String rua,
@@ -169,11 +111,6 @@ class UserProfileService extends ChangeNotifier {
     required String estado,
     String complemento = '',
   }) async {
-    final current = _profile;
-    if (current == null) {
-      throw Exception('Perfil de usuário não carregado');
-    }
-
     final address = UserAddress(
       cep: formatCep(cep.trim()),
       rua: rua.trim(),
@@ -189,83 +126,58 @@ class UserProfileService extends ChangeNotifier {
     }
 
     _setLoading(true);
-    _setError(null);
-
-    try {
-      await _userDoc(current.uid).update({
-        'address': address.toMap(),
-        'onboardingCompleted': true,
-        'updatedAt': FieldValue.serverTimestamp(),
-      });
-    } catch (e) {
-      _setError('Erro ao salvar endereço: $e');
-      rethrow;
-    } finally {
-      _setLoading(false);
-    }
-  }
-
-  Stream<List<UserProfile>> getUsersStream() {
-    return _firestore
-        .collection(usersCollection)
-        .orderBy('name')
-        .snapshots()
-        .map((snapshot) {
-          return snapshot.docs.map((doc) => UserProfile.fromDoc(doc)).toList();
-        });
-  }
-
-  Future<void> updateUserRole(String uid, String newRole) async {
-    _setLoading(true);
-    _setError(null);
-
-    try {
-      final isAdmin = newRole == 'admin';
-      await _userDoc(uid).update({
-        'role': newRole,
-        'isAdmin': isAdmin,
-        'updatedAt': FieldValue.serverTimestamp(),
-      });
-    } catch (e) {
-      _setError('Erro ao atualizar cargo do usuário: $e');
-      rethrow;
-    } finally {
-      _setLoading(false);
-    }
-  }
-
-  Future<void> updateProfilePhoto(String photoUrl) async {
-    final current = _profile;
-    if (current == null) return;
-
-    _setLoading(true);
-    _setError(null);
-
-    try {
-      await _userDoc(current.uid).update({
-        'photoUrl': photoUrl,
-        'updatedAt': FieldValue.serverTimestamp(),
-      });
-    } catch (e) {
-      _setError('Erro ao atualizar foto de perfil: $e');
-      rethrow;
-    } finally {
-      _setLoading(false);
-    }
-  }
-
-  Future<void> clear() async {
-    await _profileSubscription?.cancel();
-    _profileSubscription = null;
-    _profile = null;
     _error = null;
-    _isLoading = false;
+    try {
+      final response = await _api.put('/users/me/address', body: {
+        'cep': address.cep,
+        'rua': address.rua,
+        'bairro': address.bairro,
+        'numero': address.numero,
+        'cidade': address.cidade,
+        'estado': address.estado,
+        'complemento': address.complemento,
+      });
+      _applyUser(response as Map<String, dynamic>);
+    } finally {
+      _setLoading(false);
+    }
+  }
+
+  /// `PUT /api/users/me/photo` — recebe a imagem já em base64.
+  Future<void> updateProfilePhoto(ImagePayload payload) async {
+    _setLoading(true);
+    _error = null;
+    try {
+      final response = await _api.put('/users/me/photo', body: payload.toPhotoRequest());
+      _applyUser(response as Map<String, dynamic>);
+    } finally {
+      _setLoading(false);
+    }
+  }
+
+  void _applyUser(Map<String, dynamic> user) {
+    _profile = UserProfile.fromJson(user);
+    SessionStore.instance.saveUser(user);
     notifyListeners();
   }
 
-  @override
-  void dispose() {
-    _profileSubscription?.cancel();
-    super.dispose();
+  // ---------------------------------------------------------------------------
+  // Admin — gestão de usuários
+  // ---------------------------------------------------------------------------
+
+  /// `GET /api/admin/users?search=` (ROLE_ADMIN).
+  Future<List<UserProfile>> getUsers({String? search}) async {
+    final response = await _api.get(
+      '/admin/users',
+      query: {if (search != null && search.isNotEmpty) 'search': search},
+    );
+    return (response as List<dynamic>)
+        .map((e) => UserProfile.fromJson(e as Map<String, dynamic>))
+        .toList();
+  }
+
+  /// `PUT /api/admin/users/{id}/role` (ROLE_ADMIN).
+  Future<void> updateUserRole(String userId, String newRole) async {
+    await _api.put('/admin/users/$userId/role', body: {'role': newRole});
   }
 }

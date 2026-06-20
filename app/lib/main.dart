@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:la_nona/services/auth_service.dart';
@@ -7,9 +6,9 @@ import 'package:la_nona/services/user_profile_service.dart';
 import 'package:la_nona/services/cart_service.dart';
 import 'package:la_nona/services/favorites_service.dart';
 import 'package:la_nona/services/chat_service.dart';
+import 'package:la_nona/services/session_store.dart';
 import 'package:la_nona/theme/app_theme.dart';
 import 'package:la_nona/widgets/auth_check.dart';
-import 'firebase_options.dart';
 
 void main() async {
   // Garante que as bindings do Flutter estejam inicializadas
@@ -21,12 +20,10 @@ void main() async {
     debugPrintStack(stackTrace: details.stack);
   };
 
-  // Capturar erros em zonas assincronas
   runZonedGuarded(
     () async {
-      await Firebase.initializeApp(
-          options: DefaultFirebaseOptions.currentPlatform);
-
+      // Carrega a sessão persistida (JWT/refresh token) antes de subir o app.
+      await SessionStore.ensureInitialized();
       runApp(const MyApp());
     },
     (error, stackTrace) {
@@ -43,9 +40,9 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
-        // Provider global para leitura/escrita de usuários no Firestore
+        // Perfil do usuário (GET /api/users/me, endereço, foto, admin)
         ChangeNotifierProvider(create: (_) => UserProfileService()),
-        // Provider para AuthService (gerencia autenticação)
+        // Autenticação (login/registro/Google + restauração de sessão)
         ChangeNotifierProxyProvider<UserProfileService, AuthService>(
           create: (context) => AuthService(
             userProfileService: context.read<UserProfileService>(),
@@ -55,13 +52,25 @@ class MyApp extends StatelessWidget {
                 AuthService(userProfileService: userProfileService);
           },
         ),
-        // Provider para UserProvider (gerencia dados do usuário)
-        ChangeNotifierProvider(create: (_) => UserProvider()),
-        // Provider para CartService
-        ChangeNotifierProvider(create: (_) => CartService()),
-        // Provider para FavoritesService
-        ChangeNotifierProvider(create: (_) => FavoritesService()),
-        // Provider para ChatService
+        // Carrinho: carrega/limpa conforme o estado de autenticação
+        ChangeNotifierProxyProvider<AuthService, CartService>(
+          create: (_) => CartService(),
+          update: (context, authService, cartService) {
+            final service = cartService ?? CartService();
+            service.onAuthChanged(authService.isAuthenticated);
+            return service;
+          },
+        ),
+        // Favoritos: idem
+        ChangeNotifierProxyProvider<AuthService, FavoritesService>(
+          create: (_) => FavoritesService(),
+          update: (context, authService, favoritesService) {
+            final service = favoritesService ?? FavoritesService();
+            service.onAuthChanged(authService.isAuthenticated);
+            return service;
+          },
+        ),
+        // Chat de suporte (singleton com conexão STOMP compartilhada)
         Provider(create: (_) => ChatService()),
       ],
       child: MaterialApp(

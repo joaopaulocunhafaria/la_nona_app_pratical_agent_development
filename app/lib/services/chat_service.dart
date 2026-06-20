@@ -1,127 +1,217 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+import 'dart:async';
+import 'dart:convert';
+
+import 'package:flutter/foundation.dart';
+import 'package:stomp_dart_client/stomp_dart_client.dart';
+
+import 'package:la_nona/data/api/api_client.dart';
+import 'package:la_nona/data/api/api_config.dart';
 import 'package:la_nona/data/models/chat_message.dart';
 import 'package:la_nona/data/models/chat_thread.dart';
+import 'package:la_nona/services/session_store.dart';
 
+/// Chat de suporte: histórico/threads via REST e tempo real via STOMP/SockJS
+/// (`/ws`), substituindo o Firestore + WriteBatch.
+///
+/// Singleton: as telas instanciam com `ChatService()` e compartilham a mesma
+/// conexão WebSocket. O [AuthService] chama [connect] após o login e
+/// [disconnect] no logout.
 class ChatService {
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-  final FirebaseAuth _auth = FirebaseAuth.instance;
+  ChatService._();
+  static final ChatService _instance = ChatService._();
+  factory ChatService() => _instance;
 
-  /// Obtém todas as conversas (Apenas para Admin)
-  Stream<List<ChatThread>> getAllThreads() {
-    return _firestore
-        .collection('chats')
-        .orderBy('updatedAt', descending: true)
-        .snapshots()
-        .map((snapshot) => snapshot.docs
-            .map((doc) => ChatThread.fromMap(doc.data(), doc.id))
-            .toList());
-  }
+  final ApiClient _api = ApiClient.instance;
 
-  /// Obtém o unreadCount total de todas as conversas (Apenas para Admin)
-  Stream<int> getTotalUnreadCountAdmin() {
-    return _firestore
-        .collection('chats')
-        .snapshots()
-        .map((snapshot) {
-          int total = 0;
-          for (var doc in snapshot.docs) {
-            final data = doc.data();
-            total += (data['unreadCount'] ?? 0) as int;
-          }
-          return total;
-        });
-  }
+  StompClient? _client;
+  bool _connected = false;
 
-  /// Obtém o unreadCount de um usuário específico
-  Stream<int> getUnreadCountForUser(String userId) {
-    return _firestore
-        .collection('chats')
-        .doc(userId)
-        .snapshots()
-        .map((snapshot) {
-          if (!snapshot.exists) return 0;
-          return (snapshot.data()?['userUnreadCount'] ?? 0) as int;
-        });
-  }
+  final Map<String, StreamController<ChatMessage>> _threadControllers = {};
+  final Set<String> _subscribedThreads = {};
+  final StreamController<ChatThread> _adminThreadsController =
+      StreamController<ChatThread>.broadcast();
+  bool _adminSubscribed = false;
+  final List<void Function()> _onConnectQueue = [];
 
-  /// Obtém as mensagens de um chat específico
-  Stream<List<ChatMessage>> getMessages(String userId) {
-    return _firestore
-        .collection('chats')
-        .doc(userId)
-        .collection('messages')
-        .orderBy('sentAt', descending: true)
-        .snapshots()
-        .map((snapshot) => snapshot.docs
-            .map((doc) => ChatMessage.fromMap(doc.data(), doc.id))
-            .toList());
-  }
+  bool get isConnected => _connected;
 
-  /// Envia uma mensagem
-  Future<void> sendMessage({
-    required String targetUserId,
-    required String text,
-    required bool isAdmin,
-    String? userName,
-  }) async {
-    final currentUserId = _auth.currentUser?.uid;
-    if (currentUserId == null) return;
+  // ---------------------------------------------------------------------------
+  // Conexão STOMP
+  // ---------------------------------------------------------------------------
 
-    final batch = _firestore.batch();
+  void connect() {
+    if (_client != null) return; // já ativo ou ativando
+    final token = SessionStore.instance.token;
+    if (token == null || token.isEmpty) return;
 
-    // 1. Referência do documento da conversa (Thread)
-    final threadRef = _firestore.collection('chats').doc(targetUserId);
-    
-    // 2. Referência da nova mensagem
-    final messageRef = threadRef.collection('messages').doc();
-
-    final message = ChatMessage(
-      id: messageRef.id,
-      senderId: currentUserId,
-      text: text,
-      isAdmin: isAdmin,
-      sentAt: DateTime.now(),
+    final headers = {'Authorization': 'Bearer $token'};
+    _client = StompClient(
+      config: StompConfig.sockJS(
+        url: ApiConfig.wsUrl,
+        stompConnectHeaders: headers,
+        webSocketConnectHeaders: headers,
+        onConnect: _onConnect,
+        onWebSocketError: (dynamic error) {
+          _connected = false;
+          debugPrint('Chat WebSocket erro: $error');
+        },
+        onStompError: (StompFrame frame) =>
+            debugPrint('Chat STOMP erro: ${frame.body}'),
+        onDisconnect: (StompFrame frame) => _connected = false,
+        reconnectDelay: const Duration(seconds: 5),
+      ),
     );
+    _client!.activate();
+  }
 
-    // Salvar a mensagem
-    batch.set(messageRef, message.toMap());
+  void disconnect() {
+    _client?.deactivate();
+    _client = null;
+    _connected = false;
+    _subscribedThreads.clear();
+    _adminSubscribed = false;
+    _onConnectQueue.clear();
+  }
 
-    // Atualizar o documento do chat (lastMessage, updatedAt, unreadCount)
-    Map<String, dynamic> threadUpdate = {
-      'lastMessage': text,
-      'updatedAt': FieldValue.serverTimestamp(),
-    };
-
-    if (userName != null) {
-      threadUpdate['userName'] = userName;
-      threadUpdate['userId'] = targetUserId;
+  void _onConnect(StompFrame frame) {
+    _connected = true;
+    // (re)assina tópicos após (re)conexão.
+    if (_adminSubscribed) _subscribeAdminTopic();
+    for (final userId in _subscribedThreads) {
+      _subscribeThreadTopic(userId);
     }
+    final queued = List<void Function()>.of(_onConnectQueue);
+    _onConnectQueue.clear();
+    for (final action in queued) {
+      action();
+    }
+  }
 
-    // Se for o usuário enviando, incrementa unreadCount para o Admin
-    if (!isAdmin) {
-      threadUpdate['unreadCount'] = FieldValue.increment(1);
+  void _whenConnected(void Function() action) {
+    if (_connected && _client?.connected == true) {
+      action();
     } else {
-      // Se for o admin enviando, incrementa userUnreadCount para o usuário
-      threadUpdate['userUnreadCount'] = FieldValue.increment(1);
+      _onConnectQueue.add(action);
+      connect();
     }
-
-    batch.set(threadRef, threadUpdate, SetOptions(merge: true));
-
-    await batch.commit();
   }
 
-  /// Zera o contador de mensagens não lidas para o Admin
-  Future<void> markAsRead(String userId) async {
-    await _firestore.collection('chats').doc(userId).update({
-      'unreadCount': 0,
+  // ---------------------------------------------------------------------------
+  // Tempo real (STOMP)
+  // ---------------------------------------------------------------------------
+
+  /// Novas mensagens da thread [userId] em tempo real.
+  Stream<ChatMessage> messagesStream(String userId) {
+    final controller = _threadControllers.putIfAbsent(
+        userId, () => StreamController<ChatMessage>.broadcast());
+    if (_subscribedThreads.add(userId)) {
+      _whenConnected(() => _subscribeThreadTopic(userId));
+    }
+    return controller.stream;
+  }
+
+  void _subscribeThreadTopic(String userId) {
+    _client?.subscribe(
+      destination: '/topic/chat.$userId',
+      callback: (StompFrame frame) {
+        if (frame.body == null) return;
+        final message =
+            ChatMessage.fromJson(jsonDecode(frame.body!) as Map<String, dynamic>);
+        _threadControllers[userId]?.add(message);
+      },
+    );
+  }
+
+  /// Resumos de threads atualizadas (lista do admin).
+  Stream<ChatThread> adminThreadUpdates() {
+    if (!_adminSubscribed) {
+      _adminSubscribed = true;
+      _whenConnected(_subscribeAdminTopic);
+    }
+    return _adminThreadsController.stream;
+  }
+
+  void _subscribeAdminTopic() {
+    _client?.subscribe(
+      destination: '/topic/chat.admin.threads',
+      callback: (StompFrame frame) {
+        if (frame.body == null) return;
+        _adminThreadsController
+            .add(ChatThread.fromJson(jsonDecode(frame.body!) as Map<String, dynamic>));
+      },
+    );
+  }
+
+  /// Envia uma mensagem na thread [userId] (`SEND /app/chat.{userId}.send`).
+  void sendMessage({required String userId, required String text}) {
+    _whenConnected(() {
+      _client?.send(
+        destination: '/app/chat.$userId.send',
+        body: jsonEncode({'text': text}),
+      );
     });
   }
 
-  /// Zera o contador de mensagens não lidas para o Usuário
-  Future<void> markAsReadForUser(String userId) async {
-    await _firestore.collection('chats').doc(userId).update({
-      'userUnreadCount': 0,
-    });
+  // ---------------------------------------------------------------------------
+  // REST
+  // ---------------------------------------------------------------------------
+
+  /// `GET /api/chat/threads` (ROLE_ADMIN).
+  Future<List<ChatThread>> getAllThreads() async {
+    final response = await _api.get('/chat/threads');
+    return (response as List<dynamic>)
+        .map((e) => ChatThread.fromJson(e as Map<String, dynamic>))
+        .toList();
+  }
+
+  /// Histórico paginado da thread [userId] (ordenado por `sentAt` asc).
+  Future<List<ChatMessage>> getHistory(String userId, {int page = 0, int size = 50}) async {
+    final response = await _api.get(
+      '/chat/threads/$userId/messages',
+      query: {'page': page, 'size': size, 'sort': 'sentAt,asc'},
+    );
+    final content = (response as Map<String, dynamic>)['content'] as List<dynamic>? ?? const [];
+    return content
+        .map((e) => ChatMessage.fromJson(e as Map<String, dynamic>))
+        .toList();
+  }
+
+  /// `PUT /api/chat/threads/{userId}/read?as=admin|user`.
+  Future<void> markAsRead(String userId, {required String as}) async {
+    await _api.put('/chat/threads/$userId/read', query: {'as': as});
+  }
+
+  Future<int> _totalUnreadAdmin() async {
+    try {
+      final response = await _api.get('/chat/threads/unread-count');
+      return (response as Map<String, dynamic>)['total'] as int? ?? 0;
+    } catch (_) {
+      return 0;
+    }
+  }
+
+  Future<int> _myUnread() async {
+    try {
+      final response = await _api.get('/chat/my-thread/unread-count');
+      return (response as Map<String, dynamic>)['count'] as int? ?? 0;
+    } catch (_) {
+      return 0;
+    }
+  }
+
+  /// Badge do admin: total de não lidas, atualizado a cada thread modificada.
+  Stream<int> totalUnreadCountAdmin() async* {
+    yield await _totalUnreadAdmin();
+    await for (final _ in adminThreadUpdates()) {
+      yield await _totalUnreadAdmin();
+    }
+  }
+
+  /// Badge do cliente: não lidas da própria thread, atualizado a cada mensagem.
+  Stream<int> unreadCountForUser(String userId) async* {
+    yield await _myUnread();
+    await for (final _ in messagesStream(userId)) {
+      yield await _myUnread();
+    }
   }
 }

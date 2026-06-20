@@ -1,6 +1,22 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
+/// Uma imagem de um item de cardápio (espelha o `MenuItemImageResponse`).
+/// [data] é uma data URI base64 ou uma URL `http`.
+class MenuItemImage {
+  final String id;
+  final String data;
+  final int position;
 
-/// Modelo representando um item do cardápio
+  const MenuItemImage({required this.id, required this.data, this.position = 0});
+
+  factory MenuItemImage.fromJson(Map<String, dynamic> json) {
+    return MenuItemImage(
+      id: (json['id'] ?? '').toString(),
+      data: (json['data'] ?? '').toString(),
+      position: (json['position'] as num?)?.toInt() ?? 0,
+    );
+  }
+}
+
+/// Item do cardápio (espelha o `MenuItemResponse` do backend).
 class MenuItem {
   final String id;
   final String name;
@@ -8,9 +24,9 @@ class MenuItem {
   final double price;
   final String category;
   final bool available;
-  final List<String> imageUrls;
-  final DateTime createdAt;
-  final DateTime updatedAt;
+  final List<MenuItemImage> images;
+  final DateTime? createdAt;
+  final DateTime? updatedAt;
 
   MenuItem({
     required this.id,
@@ -19,69 +35,39 @@ class MenuItem {
     required this.price,
     required this.category,
     required this.available,
-    required this.imageUrls,
-    required this.createdAt,
-    required this.updatedAt,
+    this.images = const [],
+    this.createdAt,
+    this.updatedAt,
   });
 
-  /// Cria um MenuItem a partir de um Map do Firestore
-  ///
-  /// Recebe o documento ID e os dados do documento
-  factory MenuItem.fromMap(Map<String, dynamic> map, String id) {
+  /// Conveniência para a UI: lista de fontes de imagem (data URI ou URL),
+  /// na ordem do carrossel. Mantém compatibilidade com o código que usava
+  /// `imageUrls` no modelo antigo do Firestore.
+  List<String> get imageUrls => images.map((image) => image.data).toList();
+
+  factory MenuItem.fromJson(Map<String, dynamic> json) {
+    final rawImages = (json['images'] as List<dynamic>? ?? const [])
+        .map((e) => MenuItemImage.fromJson(e as Map<String, dynamic>))
+        .toList()
+      ..sort((a, b) => a.position.compareTo(b.position));
     return MenuItem(
-      id: id,
-      name: map['name'] as String? ?? '',
-      description: map['description'] as String? ?? '',
-      price: (map['price'] as num?)?.toDouble() ?? 0.0,
-      category: map['category'] as String? ?? '',
-      available: map['available'] as bool? ?? true,
-      imageUrls: List<String>.from(map['imageUrls'] as List<dynamic>? ?? []),
-      createdAt: (map['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
-      updatedAt: (map['updatedAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
+      id: (json['id'] ?? '').toString(),
+      name: (json['name'] ?? '').toString(),
+      description: (json['description'] ?? '').toString(),
+      price: (json['price'] as num?)?.toDouble() ?? 0.0,
+      category: (json['category'] ?? '').toString(),
+      available: json['available'] as bool? ?? true,
+      images: rawImages,
+      createdAt: _parseDate(json['createdAt']),
+      updatedAt: _parseDate(json['updatedAt']),
     );
   }
 
-  /// Converte o MenuItem para um Map para salvar no Firestore
-  Map<String, dynamic> toMap() {
-    return {
-      'name': name,
-      'description': description,
-      'price': price,
-      'category': category,
-      'available': available,
-      'imageUrls': imageUrls,
-      'createdAt': Timestamp.fromDate(createdAt),
-      'updatedAt': Timestamp.fromDate(updatedAt),
-    };
-  }
-
-  /// Cria uma cópia do MenuItem com alguns campos alterados
-  MenuItem copyWith({
-    String? id,
-    String? name,
-    String? description,
-    double? price,
-    String? category,
-    bool? available,
-    List<String>? imageUrls,
-    DateTime? createdAt,
-    DateTime? updatedAt,
-  }) {
-    return MenuItem(
-      id: id ?? this.id,
-      name: name ?? this.name,
-      description: description ?? this.description,
-      price: price ?? this.price,
-      category: category ?? this.category,
-      available: available ?? this.available,
-      imageUrls: imageUrls ?? this.imageUrls,
-      createdAt: createdAt ?? this.createdAt,
-      updatedAt: updatedAt ?? this.updatedAt,
-    );
+  static DateTime? _parseDate(dynamic value) {
+    if (value is String && value.isNotEmpty) return DateTime.tryParse(value);
+    return null;
   }
 
   @override
-  String toString() {
-    return 'MenuItem(id: $id, name: $name, price: $price, category: $category)';
-  }
+  String toString() => 'MenuItem(id: $id, name: $name, price: $price)';
 }

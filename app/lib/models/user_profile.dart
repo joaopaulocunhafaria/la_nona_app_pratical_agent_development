@@ -1,5 +1,4 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
-
+/// Endereço do usuário (espelha o `AddressResponse` / colunas `address_*`).
 class UserAddress {
   final String cep;
   final String rua;
@@ -19,6 +18,15 @@ class UserAddress {
     this.complemento = '',
   });
 
+  static const empty = UserAddress(
+    cep: '',
+    rua: '',
+    bairro: '',
+    numero: '',
+    cidade: '',
+    estado: '',
+  );
+
   bool get isComplete {
     return cep.isNotEmpty &&
         rua.isNotEmpty &&
@@ -28,42 +36,22 @@ class UserAddress {
         estado.isNotEmpty;
   }
 
-  Map<String, dynamic> toMap() {
-    return {
-      'cep': cep,
-      'rua': rua,
-      'bairro': bairro,
-      'numero': numero,
-      'cidade': cidade,
-      'estado': estado,
-      'complemento': complemento,
-    };
-  }
-
-  factory UserAddress.fromMap(Map<String, dynamic>? map) {
-    if (map == null) {
-      return const UserAddress(
-        cep: '',
-        rua: '',
-        bairro: '',
-        numero: '',
-        cidade: '',
-        estado: '',
-      );
-    }
-
+  factory UserAddress.fromJson(Map<String, dynamic>? json) {
+    if (json == null) return empty;
+    String s(dynamic v) => (v ?? '').toString();
     return UserAddress(
-      cep: (map['cep'] ?? '').toString(),
-      rua: (map['rua'] ?? '').toString(),
-      bairro: (map['bairro'] ?? '').toString(),
-      numero: (map['numero'] ?? '').toString(),
-      cidade: (map['cidade'] ?? '').toString(),
-      estado: (map['estado'] ?? '').toString(),
-      complemento: (map['complemento'] ?? '').toString(),
+      cep: s(json['cep']),
+      rua: s(json['rua']),
+      bairro: s(json['bairro']),
+      numero: s(json['numero']),
+      cidade: s(json['cidade']),
+      estado: s(json['estado']),
+      complemento: s(json['complemento']),
     );
   }
 }
 
+/// Perfil do usuário autenticado (espelha o `UserResponse` do backend).
 class UserProfile {
   final String uid;
   final String email;
@@ -93,85 +81,26 @@ class UserProfile {
 
   bool get hasAddress => address.isComplete;
 
-  UserProfile copyWith({
-    String? uid,
-    String? email,
-    String? name,
-    String? photoUrl,
-    String? provider,
-    UserAddress? address,
-    bool? onboardingCompleted,
-    bool? isAdmin,
-    String? role,
-    DateTime? createdAt,
-    DateTime? updatedAt,
-  }) {
+  factory UserProfile.fromJson(Map<String, dynamic> json) {
+    String s(dynamic v) => (v ?? '').toString();
     return UserProfile(
-      uid: uid ?? this.uid,
-      email: email ?? this.email,
-      name: name ?? this.name,
-      photoUrl: photoUrl ?? this.photoUrl,
-      provider: provider ?? this.provider,
-      address: address ?? this.address,
-      onboardingCompleted: onboardingCompleted ?? this.onboardingCompleted,
-      isAdmin: isAdmin ?? this.isAdmin,
-      role: role ?? this.role,
-      createdAt: createdAt ?? this.createdAt,
-      updatedAt: updatedAt ?? this.updatedAt,
+      uid: s(json['id']),
+      email: s(json['email']),
+      name: s(json['name']),
+      photoUrl: s(json['photo']),
+      provider: json['provider'] == null ? 'local' : s(json['provider']),
+      address: UserAddress.fromJson(json['address'] as Map<String, dynamic>?),
+      onboardingCompleted: json['onboardingCompleted'] == true,
+      isAdmin: json['isAdmin'] == true || json['role'] == 'admin',
+      role: json['role'] == null ? 'cliente' : s(json['role']),
+      createdAt: _parseDate(json['createdAt']),
+      updatedAt: _parseDate(json['updatedAt']),
     );
   }
 
-  Map<String, dynamic> toMap() {
-    return {
-      'uid': uid,
-      'email': email,
-      'name': name,
-      'photoUrl': photoUrl,
-      'provider': provider,
-      'address': address.toMap(),
-      'onboardingCompleted': onboardingCompleted,
-      'isAdmin': isAdmin,
-      'role': role,
-      'createdAt': createdAt != null ? Timestamp.fromDate(createdAt!) : null,
-      'updatedAt': updatedAt != null ? Timestamp.fromDate(updatedAt!) : null,
-    };
-  }
-
-  factory UserProfile.fromDoc(DocumentSnapshot<Map<String, dynamic>> doc) {
-    final data = doc.data() ?? {};
-
-    Map<String, dynamic>? addressData;
-    try {
-      final addressValue = data['address'];
-      if (addressValue is Map<String, dynamic>) {
-        addressData = addressValue;
-      } else if (addressValue != null) {
-        // Try to convert if it's a different map type
-        addressData = Map<String, dynamic>.from(addressValue as Map);
-      }
-    } catch (e) {
-      // If parsing address fails, use empty map
-      addressData = null;
-    }
-
-    return UserProfile(
-      uid: (data['uid'] ?? doc.id).toString(),
-      email: (data['email'] ?? '').toString(),
-      name: (data['name'] ?? '').toString(),
-      photoUrl: (data['photoUrl'] ?? '').toString(),
-      provider: (data['provider'] ?? 'google').toString(),
-      address: UserAddress.fromMap(addressData),
-      onboardingCompleted: data['onboardingCompleted'] == true,
-      isAdmin: data['isAdmin'] == true || data['role'] == 'admin',
-      role: (data['role'] ?? (data['isAdmin'] == true ? 'admin' : 'cliente')).toString(),
-      createdAt: _parseTimestamp(data['createdAt']),
-      updatedAt: _parseTimestamp(data['updatedAt']),
-    );
-  }
-
-  static DateTime? _parseTimestamp(dynamic value) {
-    if (value is Timestamp) {
-      return value.toDate();
+  static DateTime? _parseDate(dynamic value) {
+    if (value is String && value.isNotEmpty) {
+      return DateTime.tryParse(value);
     }
     return null;
   }

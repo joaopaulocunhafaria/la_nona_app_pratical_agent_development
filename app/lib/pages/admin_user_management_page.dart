@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:la_nona/data/api/app_image.dart';
 import 'package:la_nona/models/user_profile.dart';
 import 'package:la_nona/services/user_profile_service.dart';
 import 'package:la_nona/theme/app_colors.dart';
@@ -13,11 +14,22 @@ class AdminUserManagementPage extends StatefulWidget {
 
 class _AdminUserManagementPageState extends State<AdminUserManagementPage> {
   String _searchQuery = '';
+  late Future<List<UserProfile>> _usersFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _usersFuture = context.read<UserProfileService>().getUsers();
+  }
+
+  void _reload() {
+    setState(() {
+      _usersFuture = context.read<UserProfileService>().getUsers();
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
-    final userProfileService = context.watch<UserProfileService>();
-
     return Scaffold(
       appBar: AppBar(
         title: const Text('Gestão de Usuários'),
@@ -46,8 +58,8 @@ class _AdminUserManagementPageState extends State<AdminUserManagementPage> {
             ),
           ),
           Expanded(
-            child: StreamBuilder<List<UserProfile>>(
-              stream: userProfileService.getUsersStream(),
+            child: FutureBuilder<List<UserProfile>>(
+              future: _usersFuture,
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return const Center(child: CircularProgressIndicator());
@@ -87,7 +99,7 @@ class _AdminUserManagementPageState extends State<AdminUserManagementPage> {
     return ListTile(
       leading: CircleAvatar(
         backgroundColor: AppColors.primaryLight,
-        backgroundImage: user.photoUrl.isNotEmpty ? NetworkImage(user.photoUrl) : null,
+        backgroundImage: appImageProvider(user.photoUrl),
         child: user.photoUrl.isEmpty ? const Icon(Icons.person, color: Colors.white) : null,
       ),
       title: Text(user.name, style: const TextStyle(fontWeight: FontWeight.bold)),
@@ -157,7 +169,7 @@ class _AdminUserManagementPageState extends State<AdminUserManagementPage> {
                       child: CircleAvatar(
                         radius: 40,
                         backgroundColor: AppColors.primaryLight,
-                        backgroundImage: user.photoUrl.isNotEmpty ? NetworkImage(user.photoUrl) : null,
+                        backgroundImage: appImageProvider(user.photoUrl),
                         child: user.photoUrl.isEmpty ? const Icon(Icons.person, size: 40, color: Colors.white) : null,
                       ),
                     ),
@@ -222,6 +234,7 @@ class _AdminUserManagementPageState extends State<AdminUserManagementPage> {
                           ScaffoldMessenger.of(context).showSnackBar(
                             const SnackBar(content: Text('Cargo atualizado com sucesso!')),
                           );
+                          _reload();
                         }
                       } catch (e) {
                         if (context.mounted) {

@@ -1,12 +1,16 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
-
+/// Conversa do chat de suporte (espelha o `ChatThreadResponse`).
 class ChatThread {
   final String userId;
   final String userName;
   final String lastMessage;
   final DateTime updatedAt;
-  final int unreadCount; // Admin unread count
-  final int userUnreadCount; // Regular user unread count
+
+  /// Não lidas pelo admin (`adminUnreadCount`). Mantém o nome `unreadCount`
+  /// usado pela tela do inbox do admin.
+  final int unreadCount;
+
+  /// Não lidas pelo cliente (`userUnreadCount`).
+  final int userUnreadCount;
 
   ChatThread({
     required this.userId,
@@ -17,25 +21,15 @@ class ChatThread {
     this.userUnreadCount = 0,
   });
 
-  Map<String, dynamic> toMap() {
-    return {
-      'userId': userId,
-      'userName': userName,
-      'lastMessage': lastMessage,
-      'updatedAt': Timestamp.fromDate(updatedAt),
-      'unreadCount': unreadCount,
-      'userUnreadCount': userUnreadCount,
-    };
-  }
-
-  factory ChatThread.fromMap(Map<String, dynamic> map, String id) {
+  factory ChatThread.fromJson(Map<String, dynamic> json) {
     return ChatThread(
-      userId: id,
-      userName: map['userName'] ?? 'Usuário',
-      lastMessage: map['lastMessage'] ?? '',
-      updatedAt: (map['updatedAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
-      unreadCount: map['unreadCount'] ?? 0,
-      userUnreadCount: map['userUnreadCount'] ?? 0,
+      userId: (json['userId'] ?? '').toString(),
+      userName: (json['userName'] ?? 'Usuário').toString(),
+      lastMessage: (json['lastMessage'] ?? '').toString(),
+      updatedAt: DateTime.tryParse((json['updatedAt'] ?? '').toString())?.toLocal() ??
+          DateTime.now(),
+      unreadCount: (json['adminUnreadCount'] as num?)?.toInt() ?? 0,
+      userUnreadCount: (json['userUnreadCount'] as num?)?.toInt() ?? 0,
     );
   }
 }

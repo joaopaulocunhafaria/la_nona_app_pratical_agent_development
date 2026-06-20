@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:la_nona/data/api/app_image.dart';
 import 'package:la_nona/services/favorites_service.dart';
 import 'package:la_nona/theme/app_colors.dart';
 import 'package:la_nona/pages/menu_item_detail_page.dart';
@@ -77,12 +78,12 @@ class FavoritesPage extends StatelessWidget {
                               ),
                               child: ClipRRect(
                                 borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
-                                child: item.imageUrls.isNotEmpty
-                                    ? Image.network(
-                                        item.imageUrls.first,
-                                        fit: BoxFit.cover,
-                                      )
-                                    : const Icon(Icons.image_not_supported, size: 48),
+                                child: SizedBox.expand(
+                                  child: AppImage(
+                                    item.imageUrls.isNotEmpty ? item.imageUrls.first : null,
+                                    fit: BoxFit.cover,
+                                  ),
+                                ),
                               ),
                             ),
                             Positioned(
@@ -90,7 +91,17 @@ class FavoritesPage extends StatelessWidget {
                               right: 4,
                               child: IconButton(
                                 icon: const Icon(Icons.favorite, color: Colors.red),
-                                onPressed: () => favoritesService.toggleFavorite(item),
+                                onPressed: () async {
+                                  try {
+                                    await favoritesService.toggleFavorite(item);
+                                  } catch (e) {
+                                    if (context.mounted) {
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        SnackBar(content: Text('Erro ao atualizar favoritos: $e')),
+                                      );
+                                    }
+                                  }
+                                },
                               ),
                             ),
                           ],

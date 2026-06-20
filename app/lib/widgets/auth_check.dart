@@ -25,8 +25,8 @@ class _AuthCheckState extends State<AuthCheck> {
     return Consumer<AuthService>(
       builder: (context, authService, _) {
         try {
-          // Mostra indicador de carregamento enquanto valida autenticação
-          if (authService.isLoading) {
+          // Mostra indicador de carregamento enquanto restaura/valida a sessão
+          if (authService.isBootstrapping) {
             return const Scaffold(
               body: Center(
                 child: CircularProgressIndicator(),

@@ -2,7 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:la_nona/data/services/storage_service.dart';
+import 'package:la_nona/data/api/app_image.dart';
 import 'package:la_nona/models/user_profile.dart';
 import 'package:la_nona/pages/menu_page.dart';
 import 'package:la_nona/pages/cart_page.dart';
@@ -30,7 +30,6 @@ class _HomePageState extends State<HomePage> {
   bool _addressModalShown = false;
   final AddressFormService _addressFormService = const AddressFormService();
   final SessionService _sessionService = const SessionService();
-  final StorageService _storageService = StorageService();
   final ImagePicker _picker = ImagePicker();
 
   Future<void> _pickAndUploadProfilePhoto(
@@ -50,11 +49,8 @@ class _HomePageState extends State<HomePage> {
     if (!context.mounted) return;
 
     try {
-      final downloadUrl = await _storageService.uploadProfilePhoto(
-        File(image.path),
-        profile.uid,
-      );
-      await userProfileService.updateProfilePhoto(downloadUrl);
+      final payload = await filePayload(File(image.path));
+      await userProfileService.updateProfilePhoto(payload);
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Foto de perfil atualizada!')),
@@ -74,8 +70,7 @@ class _HomePageState extends State<HomePage> {
     final authService = context.watch<AuthService>();
     final userProfileService = context.watch<UserProfileService>();
     final chatService = context.read<ChatService>();
-    
-    final user = authService.user;
+
     final profile = userProfileService.profile;
     final isAdmin = profile?.isAdmin ?? false;
 
@@ -98,7 +93,7 @@ class _HomePageState extends State<HomePage> {
 
     return Scaffold(
       appBar: AppBar(
-        leading: _buildChatIcon(context, chatService, user, isAdmin, profile),
+        leading: _buildChatIcon(context, chatService, isAdmin, profile),
         title: Text(
           'La Nonna',
           style: Theme.of(context).textTheme.displayMedium?.copyWith(
@@ -123,7 +118,7 @@ class _HomePageState extends State<HomePage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _buildUserCard(context, user, profile, userProfileService),
+              _buildUserCard(context, profile, userProfileService),
               const SizedBox(height: 16),
               if (profile != null) _buildAddressCard(context, profile),
               const SizedBox(height: 32),
@@ -210,9 +205,12 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Widget _buildChatIcon(BuildContext context, ChatService chatService, dynamic user, bool isAdmin, UserProfile? profile) {
+  Widget _buildChatIcon(BuildContext context, ChatService chatService, bool isAdmin, UserProfile? profile) {
+    final userId = profile?.uid;
     return StreamBuilder<int>(
-      stream: isAdmin ? chatService.getTotalUnreadCountAdmin() : (user != null ? chatService.getUnreadCountForUser(user.uid) : Stream.value(0)),
+      stream: isAdmin
+          ? chatService.totalUnreadCountAdmin()
+          : (userId != null ? chatService.unreadCountForUser(userId) : Stream.value(0)),
       builder: (context, snapshot) {
         final unreadCount = snapshot.data ?? 0;
         
@@ -226,11 +224,11 @@ class _HomePageState extends State<HomePage> {
                   Navigator.of(context).push(
                     MaterialPageRoute(builder: (context) => const AdminChatListPage()),
                   );
-                } else if (user != null) {
+                } else if (userId != null) {
                   Navigator.of(context).push(
                     MaterialPageRoute(
                       builder: (context) => SupportChatPage(
-                        userId: user.uid,
+                        userId: userId,
                         userName: profile?.name ?? 'Cliente',
                       ),
                     ),
@@ -270,10 +268,10 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Widget _buildUserCard(BuildContext context, dynamic user, UserProfile? profile, UserProfileService userProfileService) {
-    final displayName = profile?.name.isNotEmpty == true ? profile!.name : (user?.displayName ?? 'Não definido');
-    final displayEmail = profile?.email.isNotEmpty == true ? profile!.email : (user?.email ?? 'Não definido');
-    final displayPhoto = profile?.photoUrl.isNotEmpty == true ? profile!.photoUrl : user?.photoURL;
+  Widget _buildUserCard(BuildContext context, UserProfile? profile, UserProfileService userProfileService) {
+    final displayName = profile?.name.isNotEmpty == true ? profile!.name : 'Não definido';
+    final displayEmail = profile?.email.isNotEmpty == true ? profile!.email : 'Não definido';
+    final displayPhoto = profile?.photoUrl;
     final isLoading = userProfileService.isLoading;
 
     return Card(
@@ -320,9 +318,9 @@ class _HomePageState extends State<HomePage> {
                         ],
                       ),
                       child: ClipOval(
-                        child: displayPhoto != null && displayPhoto.isNotEmpty
-                            ? Image.network(
-                                displayPhoto,
+                        child: appImageProvider(displayPhoto) != null
+                            ? Image(
+                                image: appImageProvider(displayPhoto)!,
                                 fit: BoxFit.cover,
                                 errorBuilder: (context, error, stackTrace) {
                                   return Container(

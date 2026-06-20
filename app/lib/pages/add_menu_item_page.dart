@@ -1,9 +1,9 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:la_nona/data/api/app_image.dart';
 import 'package:la_nona/data/models/menu_item.dart';
 import 'package:la_nona/data/services/menu_item_service.dart';
-import 'package:la_nona/data/services/storage_service.dart';
 import 'package:la_nona/theme/app_colors.dart';
 
 /// Página para adicionar novos itens ao cardápio
@@ -22,7 +22,6 @@ class AddMenuItemPage extends StatefulWidget {
 class _AddMenuItemPageState extends State<AddMenuItemPage> {
   final _formKey = GlobalKey<FormState>();
   final MenuItemService _menuItemService = MenuItemService();
-  final StorageService _storageService = StorageService();
   final ImagePicker _imagePicker = ImagePicker();
 
   late TextEditingController _nameController;
@@ -170,44 +169,31 @@ class _AddMenuItemPageState extends State<AddMenuItemPage> {
       }
 
       // Validar e converter preço
-      final price = double.tryParse(priceText);
+      final price = double.tryParse(priceText.replaceAll(',', '.'));
       if (price == null || price <= 0) {
         throw Exception('Preço inválido: deve ser um número maior que 0');
       }
 
-      final String itemId = widget.editingItem?.id ?? 
-          DateTime.now().millisecondsSinceEpoch.toString();
-
-      List<String> allImageUrls = [..._existingImageUrls];
-
-      // Upload de novas imagens usando o serviço centralizado
-      if (_selectedImages.isNotEmpty) {
-        try {
-          final newUrls = await _storageService.uploadMultipleImages(_selectedImages, itemId);
-          allImageUrls.addAll(newUrls);
-        } catch (_) {
-          rethrow;
-        }
+      // Imagens mantidas (já em data URI) + novas (arquivos → base64). A lista
+      // enviada substitui integralmente as imagens do item no backend.
+      final List<ImagePayload> images = [];
+      for (final existing in _existingImageUrls) {
+        final payload = dataUriToPayload(existing);
+        if (payload != null) images.add(payload);
+      }
+      for (final file in _selectedImages) {
+        images.add(await filePayload(file));
       }
 
-      // Cria ou atualiza o item
-      final menuItem = MenuItem(
-        id: itemId,
+      await _menuItemService.saveMenuItem(
+        id: widget.editingItem?.id,
         name: nameText,
         description: descriptionText,
         price: price,
         category: _selectedCategory ?? 'Outro',
         available: _available,
-        imageUrls: allImageUrls,
-        createdAt: widget.editingItem?.createdAt ?? DateTime.now(),
-        updatedAt: DateTime.now(),
+        images: images,
       );
-
-      if (widget.editingItem == null) {
-        await _menuItemService.createMenuItem(menuItem);
-      } else {
-        await _menuItemService.updateMenuItem(menuItem);
-      }
 
       if (!mounted) {
         return;
@@ -454,22 +440,11 @@ class _AddMenuItemPageState extends State<AddMenuItemPage> {
                       children: [
                         ClipRRect(
                           borderRadius: BorderRadius.circular(8),
-                          child: Image.network(
+                          child: AppImage(
                             _existingImageUrls[index],
                             width: 100,
                             height: 100,
                             fit: BoxFit.cover,
-                            errorBuilder: (context, error, stackTrace) {
-                              return Container(
-                                width: 100,
-                                height: 100,
-                                decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(8),
-                                  color: Colors.grey[200],
-                                ),
-                                child: const Icon(Icons.broken_image),
-                              );
-                            },
                           ),
                         ),
                         Positioned(
