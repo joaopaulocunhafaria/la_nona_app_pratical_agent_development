@@ -2,8 +2,9 @@ import 'package:la_nona/data/api/api_client.dart';
 import 'package:la_nona/data/api/app_image.dart';
 import 'package:la_nona/data/models/menu_item.dart';
 
-/// CRUD do cardápio via REST (`/api/menu-items`), substituindo o Firestore +
-/// Firebase Storage. As imagens vão embutidas (base64) no corpo das requisições.
+/// CRUD do cardápio via REST (`/api/menu-items`). Imagens novas sobem como
+/// base64 no corpo (o backend grava no bucket e devolve a URL); imagens já
+/// existentes são mantidas apenas pela URL, sem reenviar o binário.
 class MenuItemService {
   static final MenuItemService _instance = MenuItemService._internal();
   MenuItemService._internal();

@@ -174,12 +174,11 @@ class _AddMenuItemPageState extends State<AddMenuItemPage> {
         throw Exception('Preço inválido: deve ser um número maior que 0');
       }
 
-      // Imagens mantidas (já em data URI) + novas (arquivos → base64). A lista
-      // enviada substitui integralmente as imagens do item no backend.
+      // Imagens mantidas (pela URL, sem reenviar o binário) + novas (arquivos →
+      // base64). A lista enviada substitui integralmente as imagens do item.
       final List<ImagePayload> images = [];
       for (final existing in _existingImageUrls) {
-        final payload = dataUriToPayload(existing);
-        if (payload != null) images.add(payload);
+        images.add(ImagePayload.existing(existing));
       }
       for (final file in _selectedImages) {
         images.add(await filePayload(file));

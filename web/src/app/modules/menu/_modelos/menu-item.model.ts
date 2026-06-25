@@ -1,6 +1,7 @@
 export interface MenuItemImage {
 	id: string;
-	data: string;
+	/** URL pública da imagem no bucket (ou data URI legada de itens antigos). */
+	url: string;
 	position: number;
 }
 
@@ -16,9 +17,15 @@ export interface MenuItem {
 	updatedAt: string;
 }
 
+/**
+ * Imagem enviada ao backend. Para uma imagem nova, informe `base64` +
+ * `contentType` (o backend faz o upload ao bucket). Para manter uma imagem já
+ * existente na edição, informe apenas `url`.
+ */
 export interface MenuItemImageRequest {
-	base64: string;
-	contentType: string;
+	url?: string;
+	base64?: string;
+	contentType?: string;
 }
 
 export interface MenuItemRequest {

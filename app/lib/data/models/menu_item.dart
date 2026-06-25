@@ -1,16 +1,17 @@
 /// Uma imagem de um item de cardápio (espelha o `MenuItemImageResponse`).
-/// [data] é uma data URI base64 ou uma URL `http`.
+/// [url] é a URL pública da imagem no bucket (ou uma data URI legada de itens
+/// cadastrados antes da migração para o bucket).
 class MenuItemImage {
   final String id;
-  final String data;
+  final String url;
   final int position;
 
-  const MenuItemImage({required this.id, required this.data, this.position = 0});
+  const MenuItemImage({required this.id, required this.url, this.position = 0});
 
   factory MenuItemImage.fromJson(Map<String, dynamic> json) {
     return MenuItemImage(
       id: (json['id'] ?? '').toString(),
-      data: (json['data'] ?? '').toString(),
+      url: (json['url'] ?? '').toString(),
       position: (json['position'] as num?)?.toInt() ?? 0,
     );
   }
@@ -40,10 +41,8 @@ class MenuItem {
     this.updatedAt,
   });
 
-  /// Conveniência para a UI: lista de fontes de imagem (data URI ou URL),
-  /// na ordem do carrossel. Mantém compatibilidade com o código que usava
-  /// `imageUrls` no modelo antigo do Firestore.
-  List<String> get imageUrls => images.map((image) => image.data).toList();
+  /// Conveniência para a UI: lista de URLs de imagem, na ordem do carrossel.
+  List<String> get imageUrls => images.map((image) => image.url).toList();
 
   factory MenuItem.fromJson(Map<String, dynamic> json) {
     final rawImages = (json['images'] as List<dynamic>? ?? const [])

@@ -1,8 +1,10 @@
 package com.lanona.api;
 
+import com.amazonaws.services.s3.AmazonS3;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.transaction.annotation.Transactional;
 import org.testcontainers.containers.PostgreSQLContainer;
 
@@ -22,6 +24,12 @@ import org.testcontainers.containers.PostgreSQLContainer;
 @AutoConfigureMockMvc
 @Transactional
 public abstract class AbstractIntegrationTest {
+
+    // Sem AWS real nos testes: o cliente S3 e' mockado, entao uploads nao saem
+    // pela rede. O S3StorageService monta a URL publica de forma deterministica
+    // a partir da config, entao as respostas continuam com URLs validas.
+    @MockitoBean
+    protected AmazonS3 amazonS3;
 
     @ServiceConnection
     static final PostgreSQLContainer<?> POSTGRES = new PostgreSQLContainer<>("postgres:16-alpine");

@@ -142,6 +142,30 @@ class MenuItemIntegrationTest extends AbstractIntegrationTest {
     }
 
     @Test
+    void createStoresImageInBucketAndReturnsUrlNotBase64() throws Exception {
+        String adminToken = registerAndGetToken("menu-imagem@lanona.com", true);
+
+        String created = mockMvc.perform(post("/api/menu-items").contentType("application/json")
+                        .header("Authorization", "Bearer " + adminToken)
+                        .content("""
+                                {"name":"X-Foto","description":"teste","price":19.90,
+                                 "category":"hamburguer","available":true,
+                                 "images":[{"base64":"Zm9v","contentType":"image/jpeg"}]}
+                                """))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.images.length()").value(1))
+                // a imagem nao volta como base64: o backend subiu para o bucket
+                // (S3 mockado) e persistiu apenas a URL publica do objeto.
+                .andExpect(jsonPath("$.images[0].url")
+                        .value(org.hamcrest.Matchers.startsWith(
+                                "https://s3.sa-east-1.amazonaws.com/la-nona-images/menu-items/")))
+                .andReturn().getResponse().getContentAsString();
+
+        // confirma que nenhum data URI base64 escapou para a resposta.
+        org.assertj.core.api.Assertions.assertThat(created).doesNotContain("data:image");
+    }
+
+    @Test
     void createWithoutImagesIsRejected() throws Exception {
         String adminToken = registerAndGetToken("menu-admin-2@lanona.com", true);
 

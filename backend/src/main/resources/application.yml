@@ -50,6 +50,24 @@ app:
   cors:
     allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:*}
 
+# Armazenamento de imagens no Amazon S3 (ver ConfiguracaoAws/S3StorageService).
+# As imagens NUNCA sao gravadas no banco: o upload vai para o bucket e somente a
+# URL publica do objeto e' persistida. Para apontar para um bucket real basta
+# definir as variaveis de ambiente abaixo (nada mais precisa mudar no codigo):
+#   AWS_ACCESS_KEY / AWS_SECRET_KEY  -> credenciais IAM (NUNCA versionar reais)
+#   AWS_REGION                       -> regiao do bucket (ex.: sa-east-1)
+#   AWS_S3_URL                       -> endpoint base para montar a URL publica
+#   AWS_S3_BUCKET                    -> nome do bucket
+# Em ambientes AWS (EC2/ECS/EKS) prefira IAM Roles e deixe accessKey/secretKey
+# vazios — o SDK resolve as credenciais via DefaultAWSCredentialsProviderChain.
+amazon:
+  accessKey: ${AWS_ACCESS_KEY:}
+  secretKey: ${AWS_SECRET_KEY:}
+  region: ${AWS_REGION:sa-east-1}
+  s3:
+    url: ${AWS_S3_URL:https://s3.sa-east-1.amazonaws.com}
+    bucketName: ${AWS_S3_BUCKET:la-nona-images}
+
 springdoc:
   swagger-ui:
     path: /swagger-ui.html

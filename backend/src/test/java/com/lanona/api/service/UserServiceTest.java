@@ -1,6 +1,7 @@
 package com.lanona.api.service;
 
 import com.lanona.api.dto.request.AddressRequest;
+import com.lanona.api.dto.request.PhotoRequest;
 import com.lanona.api.entity.User;
 import com.lanona.api.exception.BadRequestException;
 import com.lanona.api.repository.UserRepository;
@@ -18,6 +19,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -25,6 +27,9 @@ class UserServiceTest {
 
     @Mock
     private UserRepository userRepository;
+
+    @Mock
+    private S3StorageService storageService;
 
     @InjectMocks
     private UserService userService;
@@ -94,5 +99,19 @@ class UserServiceTest {
         assertThatThrownBy(() -> userService.saveAddress(userId, request))
                 .isInstanceOf(BadRequestException.class)
                 .hasMessageContaining("Rua");
+    }
+
+    @Test
+    void updatePhoto_uploadsToBucketAndStoresOnlyUrl() {
+        user.setPhoto("https://bucket/user-photos/old.jpg");
+        when(storageService.uploadBase64("Zm9v", "image/jpeg", "user-photos"))
+                .thenReturn("https://bucket/user-photos/new.jpg");
+
+        var response = userService.updatePhoto(userId, new PhotoRequest("Zm9v", "image/jpeg"));
+
+        assertThat(response.photo()).isEqualTo("https://bucket/user-photos/new.jpg");
+        assertThat(user.getPhoto()).isEqualTo("https://bucket/user-photos/new.jpg");
+        // a foto anterior e' removida do bucket.
+        verify(storageService).delete("https://bucket/user-photos/old.jpg");
     }
 }

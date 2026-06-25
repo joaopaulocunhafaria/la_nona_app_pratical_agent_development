@@ -114,21 +114,22 @@ export class MenuFormComponent implements OnInit {
 	}
 
 	private async converterImagens(): Promise<MenuItemImageRequest[]> {
-		const existentes: MenuItemImageRequest[] = this.imagensExistentes().map((imagem) => this.parseDataUri(imagem.data));
+		// Imagens já armazenadas são mantidas pela URL (sem reenviar o binário);
+		// apenas as novas sobem como base64 para o backend salvar no bucket.
+		const existentes: MenuItemImageRequest[] = this.imagensExistentes().map((imagem) => ({ url: imagem.url }));
 		const novas = await Promise.all(this.novasImagens().map((nova) => this.arquivoParaBase64(nova.arquivo)));
 		return [...existentes, ...novas];
-	}
-
-	private parseDataUri(dataUri: string): MenuItemImageRequest {
-		const [meta, base64] = dataUri.split(',');
-		const contentType = meta.replace('data:', '').replace(';base64', '');
-		return { base64, contentType };
 	}
 
 	private arquivoParaBase64(arquivo: File): Promise<MenuItemImageRequest> {
 		return new Promise((resolve, reject) => {
 			const leitor = new FileReader();
-			leitor.onload = () => resolve(this.parseDataUri(leitor.result as string));
+			leitor.onload = () => {
+				const dataUri = leitor.result as string;
+				const [meta, base64] = dataUri.split(',');
+				const contentType = meta.replace('data:', '').replace(';base64', '');
+				resolve({ base64, contentType });
+			};
 			leitor.onerror = reject;
 			leitor.readAsDataURL(arquivo);
 		});

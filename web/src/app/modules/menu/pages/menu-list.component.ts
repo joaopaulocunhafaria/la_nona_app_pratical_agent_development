@@ -179,6 +179,6 @@ export class MenuListComponent implements OnInit {
 	}
 
 	primeiraImagem(item: MenuItem): string | null {
-		return item.images.length > 0 ? item.images[0].data : null;
+		return item.images.length > 0 ? item.images[0].url : null;
 	}
 }

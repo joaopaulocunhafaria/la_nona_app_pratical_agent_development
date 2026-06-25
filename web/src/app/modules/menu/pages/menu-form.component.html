@@ -12,7 +12,7 @@
 			<div class="flex flex-wrap gap-3">
 				@for (imagem of imagensExistentes(); track imagem.id) {
 					<div class="relative h-20 w-20 overflow-hidden rounded-lg">
-						<img [src]="imagem.data" class="h-full w-full object-cover" alt="Imagem do item" />
+						<img [src]="imagem.url" class="h-full w-full object-cover" alt="Imagem do item" />
 						<button
 							type="button"
 							class="absolute top-0 right-0 flex h-5 w-5 items-center justify-center rounded-full bg-red-600 text-xs text-white"

@@ -31,7 +31,10 @@ public class UserService {
     private static final Pattern NUMERO_PATTERN = Pattern.compile("^[0-9A-Za-z/-]{1,10}$");
     private static final int COMPLEMENTO_MAX_LENGTH = 60;
 
+    private static final String PHOTO_DIRECTORY = "user-photos";
+
     private final UserRepository userRepository;
+    private final S3StorageService storageService;
 
     public UserResponse getById(UUID id) {
         return UserResponse.from(findById(id));
@@ -97,8 +100,18 @@ public class UserService {
     @Transactional
     public UserResponse updatePhoto(UUID userId, PhotoRequest request) {
         User user = findById(userId);
-        user.setPhoto("data:" + request.contentType() + ";base64," + request.imageBase64());
-        return UserResponse.from(userRepository.saveAndFlush(user));
+
+        String previousPhoto = user.getPhoto();
+        // Envia a imagem ao bucket e guarda somente a URL publica.
+        String photoUrl = storageService.uploadBase64(request.imageBase64(), request.contentType(), PHOTO_DIRECTORY);
+        user.setPhoto(photoUrl);
+
+        UserResponse response = UserResponse.from(userRepository.saveAndFlush(user));
+
+        // Remove a foto anterior do bucket (no-op para fotos externas, ex.: Google).
+        storageService.delete(previousPhoto);
+
+        return response;
     }
 
     @Transactional

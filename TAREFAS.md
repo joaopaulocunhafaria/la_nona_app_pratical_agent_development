@@ -1,0 +1,2 @@
+- Gerar uma chave do google para permitir login via google authentication
+- Altere o projeto para que todos os lugares onde seja lidado com salvamento retornod ode imagens seja feito atráves de envio para um bucket online e salvo somente as urls das imagens. Garantir que todos os lugares onde era usado salvamento de imagens direto no banco seja alterado para usar a nova versão. Fazer todas as alterações necessárias e criar testes para validar. Deixar o projeto totalmente configurado para que seja necessário colocar somente as informações do bucket real que será usado 

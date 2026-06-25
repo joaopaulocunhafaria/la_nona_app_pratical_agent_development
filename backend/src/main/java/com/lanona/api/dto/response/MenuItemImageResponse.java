@@ -6,11 +6,11 @@ import java.util.UUID;
 
 public record MenuItemImageResponse(
         UUID id,
-        String data,
+        String url,
         int position
 ) {
 
     public static MenuItemImageResponse from(MenuItemImage image) {
-        return new MenuItemImageResponse(image.getId(), image.getImageData(), image.getPosition());
+        return new MenuItemImageResponse(image.getId(), image.getImageUrl(), image.getPosition());
     }
 }

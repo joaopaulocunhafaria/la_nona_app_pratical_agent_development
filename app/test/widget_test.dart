@@ -62,14 +62,14 @@ void main() {
         'category': 'Pizza',
         'available': true,
         'images': [
-          {'id': 'i2', 'data': 'data:image/png;base64,BBBB', 'position': 1},
-          {'id': 'i1', 'data': 'https://x/1.png', 'position': 0},
+          {'id': 'i2', 'url': 'https://bucket/2.png', 'position': 1},
+          {'id': 'i1', 'url': 'https://bucket/1.png', 'position': 0},
         ],
       });
 
       expect(item.price, 49.9);
       expect(item.images.first.id, 'i1');
-      expect(item.imageUrls, ['https://x/1.png', 'data:image/png;base64,BBBB']);
+      expect(item.imageUrls, ['https://bucket/1.png', 'https://bucket/2.png']);
     });
   });
 
@@ -120,12 +120,17 @@ void main() {
           isA<MemoryImage>());
     });
 
-    test('dataUriToPayload separa contentType e base64', () {
-      final payload = dataUriToPayload('data:image/jpeg;base64,QUJD');
-      expect(payload, isNotNull);
-      expect(payload!.contentType, 'image/jpeg');
-      expect(payload.base64, 'QUJD');
-      expect(dataUriToPayload('https://x/1.png'), isNull);
+    test('ImagePayload.upload envia base64 + contentType', () {
+      const payload = ImagePayload.upload(base64: 'QUJD', contentType: 'image/jpeg');
+      expect(payload.isExisting, isFalse);
+      expect(payload.toImageRequest(), {'base64': 'QUJD', 'contentType': 'image/jpeg'});
+      expect(payload.toPhotoRequest(), {'imageBase64': 'QUJD', 'contentType': 'image/jpeg'});
+    });
+
+    test('ImagePayload.existing mantém imagem do bucket apenas pela URL', () {
+      const payload = ImagePayload.existing('https://bucket/menu-items/1.png');
+      expect(payload.isExisting, isTrue);
+      expect(payload.toImageRequest(), {'url': 'https://bucket/menu-items/1.png'});
     });
   });
 }

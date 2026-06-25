@@ -13,14 +13,20 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
 public class MenuItemService {
 
+    private static final String IMAGE_DIRECTORY = "menu-items";
+
     private final MenuItemRepository menuItemRepository;
+    private final S3StorageService storageService;
 
     @Transactional(readOnly = true)
     public List<MenuItemResponse> search(String category, Boolean available, String query) {
@@ -69,26 +75,59 @@ public class MenuItemService {
         item.setCategory(parseCategory(request.category()));
         item.setAvailable(request.available() == null || request.available());
 
+        List<String> previousUrls = item.getImages().stream()
+                .map(MenuItemImage::getImageUrl)
+                .toList();
+
         item.getImages().clear();
         applyImages(item, request.images());
 
-        return MenuItemResponse.from(menuItemRepository.saveAndFlush(item));
+        MenuItemResponse response = MenuItemResponse.from(menuItemRepository.saveAndFlush(item));
+
+        // Remove do bucket as imagens que nao fazem mais parte do item, evitando
+        // arquivos orfaos. Falha de remocao nao quebra a atualizacao (ver delete()).
+        Set<String> keptUrls = new HashSet<>(item.getImages().stream().map(MenuItemImage::getImageUrl).toList());
+        previousUrls.stream()
+                .filter(previousUrl -> !keptUrls.contains(previousUrl))
+                .forEach(storageService::delete);
+
+        return response;
     }
 
     @Transactional
     public void delete(UUID id) {
-        menuItemRepository.delete(findById(id));
+        MenuItem item = findById(id);
+        List<String> urls = item.getImages().stream().map(MenuItemImage::getImageUrl).toList();
+        menuItemRepository.delete(item);
+        urls.forEach(storageService::delete);
     }
 
     private void applyImages(MenuItem item, List<MenuItemImageRequest> imageRequests) {
-        for (int i = 0; i < imageRequests.size(); i++) {
-            MenuItemImageRequest request = imageRequests.get(i);
+        // Pré-resolve as URLs (uploads novos vao para o bucket) antes de montar as
+        // entidades; somente a URL e' persistida — o binario nunca toca o banco.
+        List<String> resolvedUrls = new ArrayList<>(imageRequests.size());
+        for (MenuItemImageRequest request : imageRequests) {
+            resolvedUrls.add(resolveImageUrl(request));
+        }
+
+        for (int i = 0; i < resolvedUrls.size(); i++) {
             item.getImages().add(MenuItemImage.builder()
                     .menuItem(item)
-                    .imageData("data:" + request.contentType() + ";base64," + request.base64())
+                    .imageUrl(resolvedUrls.get(i))
                     .position(i)
                     .build());
         }
+    }
+
+    private String resolveImageUrl(MenuItemImageRequest request) {
+        if (request.isExisting()) {
+            return request.url().trim();
+        }
+        if (request.base64() == null || request.base64().isBlank()
+                || request.contentType() == null || request.contentType().isBlank()) {
+            throw new BadRequestException("Imagem inválida: informe uma URL existente ou base64 + contentType.");
+        }
+        return storageService.uploadBase64(request.base64(), request.contentType(), IMAGE_DIRECTORY);
     }
 
     private MenuItem findById(UUID id) {

@@ -38,7 +38,7 @@ export class CartPageComponent implements OnInit {
 	}
 
 	primeiraImagem(item: CartItem): string | null {
-		return item.menuItem.images.length > 0 ? item.menuItem.images[0].data : null;
+		return item.menuItem.images.length > 0 ? item.menuItem.images[0].url : null;
 	}
 
 	diminuir(item: CartItem): void {
