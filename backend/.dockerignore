@@ -1,0 +1,20 @@
+# Nao envia o alvo compilado local nem metadados ao contexto do build:
+# o JAR e gerado dentro do proprio Dockerfile (estagio de build).
+target/
+!src/main/**/target/
+!src/test/**/target/
+
+.git
+.github
+.idea
+*.iml
+.vscode
+.settings
+.classpath
+.project
+
+# Documentacao/local que nao influencia o build
+README.md
+SPRINGBOOT.md
+HELP.md
+docker-compose.yml

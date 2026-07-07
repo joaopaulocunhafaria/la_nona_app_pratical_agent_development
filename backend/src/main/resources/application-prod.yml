@@ -1,0 +1,44 @@
+# ===========================================================================
+# Perfil de PRODUCAO (Render) - ativado com SPRING_PROFILES_ACTIVE=prod
+# ---------------------------------------------------------------------------
+# Este arquivo NAO contem segredos. Todo valor sensivel (URL do banco, senha,
+# JWT_SECRET, credenciais AWS, origens de CORS) vem de variaveis de ambiente
+# definidas no painel do Render. Os defaults abaixo apenas herdam/reforcam o
+# que ja esta em application.yml.
+#
+# Variaveis que voce DEVE cadastrar no Render (Environment):
+#   DB_URL       = jdbc:postgresql://dpg-d96j4osvikkc73c0vai0-a/la_nona_database
+#   DB_USERNAME  = la_nona_database_user
+#   DB_PASSWORD  = (senha do banco)
+#   DB_SCHEMA    = la_nona_api        (opcional; default ja e la_nona_api)
+#   JWT_SECRET   = (segredo longo e aleatorio, >= 32 chars)
+#   CORS_ALLOWED_ORIGINS = https://SEU-FRONT.onrender.com
+#   GOOGLE_CLIENT_ID     = (client id do login com Google, se usado)
+#   AWS_ACCESS_KEY / AWS_SECRET_KEY / AWS_REGION / AWS_S3_URL / AWS_S3_BUCKET
+# O Render injeta PORT automaticamente (nao precisa cadastrar).
+# ===========================================================================
+spring:
+  datasource:
+    # Pool conservador para o plano free do Postgres do Render (poucas conexoes).
+    hikari:
+      maximum-pool-size: ${DB_POOL_MAX:5}
+      minimum-idle: ${DB_POOL_MIN:1}
+      connection-timeout: 30000
+
+  jpa:
+    # O schema continua sendo gerenciado exclusivamente pelo Flyway.
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        format_sql: false
+
+  flyway:
+    enabled: true
+    baseline-on-migrate: false
+
+logging:
+  level:
+    root: WARN
+    com.lanona.api: INFO
+    org.hibernate.SQL: WARN

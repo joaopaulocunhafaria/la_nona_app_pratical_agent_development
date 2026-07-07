@@ -30,7 +30,8 @@ spring:
     baseline-on-migrate: false
 
 server:
-  port: ${SERVER_PORT:8080}
+  # No Render (Docker) a porta e injetada pela variavel PORT; localmente cai em SERVER_PORT/8080.
+  port: ${PORT:${SERVER_PORT:8080}}
   error:
     # FallbackErrorController (com.lanona.api.exception) ja substitui o corpo padrao do Spring Boot;
     # estas flags sao uma segunda camada de protecao para nunca expor path/stacktrace ao cliente.
@@ -74,6 +75,16 @@ springdoc:
   api-docs:
     path: /api-docs
 
+# Actuator: expoe somente o health (usado como Health Check pelo Render).
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      show-details: never
+
 logging:
   level:
     com.lanona.api: INFO
@@ -95,12 +106,4 @@ logging:
     org.hibernate.SQL: DEBUG
     com.lanona.api: DEBUG
 
----
-spring:
-  config:
-    activate:
-      on-profile: prod
-
-logging:
-  level:
-    com.lanona.api: INFO
+# O perfil 'prod' fica em application-prod.yml (ativado por SPRING_PROFILES_ACTIVE=prod).
