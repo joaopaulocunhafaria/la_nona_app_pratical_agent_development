@@ -32,3 +32,8 @@ migrate_working_dir/
 # VS Code which you may wish to be included in version control, so this line
 # is commented out by default.
 #.vscode/
+
+# Documento de deployment com segredos (URLs de banco, senhas, chaves AWS,
+# JWT secret). NUNCA versionar — contem credenciais de producao.
+DEPLOYMENT.local.md
+
