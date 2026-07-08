@@ -1,3 +1,11 @@
+// PrimeNG's `.p-inputtext` padding overrides the Tailwind `pl-10` utility
+// (utilities live in a lower cascade layer), causing the search icon to
+// overlap the typed text. This scoped rule wins on specificity and keeps
+// the text clear of the magnifying-glass icon.
+.search-input {
+	padding-left: 2.75rem;
+}
+
 .categorias-scroll {
 	cursor: grab;
 	scrollbar-width: none; // Firefox
