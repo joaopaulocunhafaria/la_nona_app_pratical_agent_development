@@ -1,6 +1,7 @@
 package com.lanona.api.service;
 
 import com.lanona.api.dto.response.LoginMetricsResponse;
+import com.lanona.api.dto.response.MenuViewMetricsResponse;
 import com.lanona.api.dto.response.OnlineCountResponse;
 import com.lanona.api.dto.response.SessionDurationResponse;
 import com.lanona.api.dto.response.TimeBucketResponse;
@@ -8,6 +9,7 @@ import com.lanona.api.dto.response.TopItemResponse;
 import com.lanona.api.dto.response.UserDurationResponse;
 import com.lanona.api.repository.ItemViewEventRepository;
 import com.lanona.api.repository.LoginEventRepository;
+import com.lanona.api.repository.MenuViewEventRepository;
 import com.lanona.api.repository.TelemetrySessionRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
@@ -30,6 +32,7 @@ public class TelemetryAdminService {
     private final TelemetrySessionRepository sessionRepository;
     private final LoginEventRepository loginEventRepository;
     private final ItemViewEventRepository itemViewEventRepository;
+    private final MenuViewEventRepository menuViewEventRepository;
 
     public OnlineCountResponse online() {
         Instant threshold = Instant.now().minus(ONLINE_WINDOW);
@@ -46,6 +49,15 @@ public class TelemetryAdminService {
                 .map(TimeBucketResponse::from)
                 .toList();
         return new LoginMetricsResponse(total, distinct, series);
+    }
+
+    public MenuViewMetricsResponse menuViews(Instant from, Instant to, String granularity) {
+        String bucket = normalizeGranularity(granularity);
+        long total = menuViewEventRepository.countByCreatedAtBetween(from, to);
+        List<TimeBucketResponse> series = menuViewEventRepository.menuViewsOverTime(bucket, from, to).stream()
+                .map(TimeBucketResponse::from)
+                .toList();
+        return new MenuViewMetricsResponse(total, series);
     }
 
     public SessionDurationResponse sessionDurations(Instant from, Instant to, int limit) {

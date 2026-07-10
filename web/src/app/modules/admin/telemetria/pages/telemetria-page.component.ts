@@ -1,6 +1,8 @@
 import { Component, OnInit, signal } from '@angular/core';
+import { NotificacoesService } from '../../../../services/notificacoes.service';
 import {
 	LoginMetrics,
+	MenuViewMetrics,
 	OnlineCount,
 	Periodo,
 	SessionDurations,
@@ -24,7 +26,7 @@ export class TelemetriaPageComponent implements OnInit {
 
 	// --- Logins por periodo ---
 	loginsDe: Date = this.diasAtras(7);
-	loginsAte: Date = new Date();
+	loginsAte: Date = this.fimDeHoje();
 	granularidade: Granularidade = 'day';
 	readonly granularidades = [
 		{ label: 'Por dia', value: 'day' as Granularidade },
@@ -34,35 +36,60 @@ export class TelemetriaPageComponent implements OnInit {
 	readonly carregandoLogins = signal(false);
 	readonly loginsChart = signal<unknown>(null);
 
+	// --- Acessos ao cardapio (/menu) ---
+	acessosDe: Date = this.diasAtras(7);
+	acessosAte: Date = this.fimDeHoje();
+	granularidadeAcessos: Granularidade = 'day';
+	readonly acessos = signal<MenuViewMetrics | null>(null);
+	readonly carregandoAcessos = signal(false);
+	readonly acessosChart = signal<unknown>(null);
+
 	// --- Tempo de acesso ---
 	sessoesDe: Date = this.diasAtras(7);
-	sessoesAte: Date = new Date();
+	sessoesAte: Date = this.fimDeHoje();
 	readonly sessoes = signal<SessionDurations | null>(null);
 	readonly carregandoSessoes = signal(false);
 	readonly sessoesChart = signal<unknown>(null);
 
 	// --- Itens mais vistos ---
 	itensDe: Date = this.diasAtras(7);
-	itensAte: Date = new Date();
+	itensAte: Date = this.fimDeHoje();
 	readonly itens = signal<TopItem[]>([]);
 	readonly carregandoItens = signal(false);
 	readonly itensChart = signal<unknown>(null);
 
+	// responsive + maintainAspectRatio:false: o canvas preenche o container de altura
+	// fixa (h-64/h-40) em vez de derivar a altura da largura. Sem isto, no desktop (secao
+	// larga) o grafico calcula uma altura enorme e transborda sobre a proxima secao; no
+	// celular a largura pequena mascarava o problema.
 	readonly opcoesBarra = {
+		responsive: true,
+		maintainAspectRatio: false,
 		plugins: { legend: { display: false } },
 		scales: { y: { beginAtZero: true } },
 	};
 	readonly opcoesBarraHorizontal = {
+		responsive: true,
+		maintainAspectRatio: false,
 		indexAxis: 'y',
 		plugins: { legend: { display: false } },
 		scales: { x: { beginAtZero: true } },
 	};
+	readonly opcoesDoughnut = {
+		responsive: true,
+		maintainAspectRatio: false,
+		plugins: { legend: { display: false } },
+	};
 
-	constructor(private readonly telemetriaService: TelemetriaService) {}
+	constructor(
+		private readonly telemetriaService: TelemetriaService,
+		private readonly notificacoesService: NotificacoesService,
+	) {}
 
 	ngOnInit(): void {
 		this.carregarOnline();
 		this.carregarLogins();
+		this.carregarAcessos();
 		this.carregarSessoes();
 		this.carregarItens();
 	}
@@ -78,7 +105,10 @@ export class TelemetriaPageComponent implements OnInit {
 				});
 				this.carregandoOnline.set(false);
 			},
-			error: () => this.carregandoOnline.set(false),
+			error: (erro) => {
+				this.carregandoOnline.set(false);
+				this.notificacoesService.erro(erro?.message ?? 'Não foi possível carregar os usuários online.');
+			},
 		});
 	}
 
@@ -88,7 +118,7 @@ export class TelemetriaPageComponent implements OnInit {
 			next: (dados) => {
 				this.logins.set(dados);
 				this.loginsChart.set({
-					labels: dados.series.map((b) => this.formatarBucket(b.bucket)),
+					labels: dados.series.map((b) => this.formatarBucket(b.bucket, this.granularidade)),
 					datasets: [
 						{
 							label: 'Logins',
@@ -102,7 +132,37 @@ export class TelemetriaPageComponent implements OnInit {
 				});
 				this.carregandoLogins.set(false);
 			},
-			error: () => this.carregandoLogins.set(false),
+			error: (erro) => {
+				this.carregandoLogins.set(false);
+				this.notificacoesService.erro(erro?.message ?? 'Não foi possível carregar os logins por período.');
+			},
+		});
+	}
+
+	carregarAcessos(): void {
+		this.carregandoAcessos.set(true);
+		this.telemetriaService.acessosMenu(this.periodo(this.acessosDe, this.acessosAte), this.granularidadeAcessos).subscribe({
+			next: (dados) => {
+				this.acessos.set(dados);
+				this.acessosChart.set({
+					labels: dados.series.map((b) => this.formatarBucket(b.bucket, this.granularidadeAcessos)),
+					datasets: [
+						{
+							label: 'Acessos',
+							data: dados.series.map((b) => b.count),
+							borderColor: '#8d6e63',
+							backgroundColor: 'rgba(141, 110, 59, 0.2)',
+							fill: true,
+							tension: 0.3,
+						},
+					],
+				});
+				this.carregandoAcessos.set(false);
+			},
+			error: (erro) => {
+				this.carregandoAcessos.set(false);
+				this.notificacoesService.erro(erro?.message ?? 'Não foi possível carregar os acessos ao cardápio.');
+			},
 		});
 	}
 
@@ -123,7 +183,10 @@ export class TelemetriaPageComponent implements OnInit {
 				});
 				this.carregandoSessoes.set(false);
 			},
-			error: () => this.carregandoSessoes.set(false),
+			error: (erro) => {
+				this.carregandoSessoes.set(false);
+				this.notificacoesService.erro(erro?.message ?? 'Não foi possível carregar o tempo de acesso.');
+			},
 		});
 	}
 
@@ -138,7 +201,10 @@ export class TelemetriaPageComponent implements OnInit {
 				});
 				this.carregandoItens.set(false);
 			},
-			error: () => this.carregandoItens.set(false),
+			error: (erro) => {
+				this.carregandoItens.set(false);
+				this.notificacoesService.erro(erro?.message ?? 'Não foi possível carregar os itens mais visualizados.');
+			},
 		});
 	}
 
@@ -152,16 +218,29 @@ export class TelemetriaPageComponent implements OnInit {
 		return { from: de?.toISOString(), to: ate?.toISOString() };
 	}
 
-	private formatarBucket(iso: string): string {
+	private formatarBucket(iso: string, granularidade: Granularidade): string {
 		const d = new Date(iso);
 		const data = d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
-		return this.granularidade === 'hour' ? `${data} ${String(d.getHours()).padStart(2, '0')}h` : data;
+		return granularidade === 'hour' ? `${data} ${String(d.getHours()).padStart(2, '0')}h` : data;
 	}
 
 	private diasAtras(dias: number): Date {
 		const d = new Date();
 		d.setDate(d.getDate() - dias);
 		d.setHours(0, 0, 0, 0);
+		return d;
+	}
+
+	/**
+	 * Fim do dia de hoje (23:59:59). O limite "Até" precisa cobrir o dia
+	 * inteiro: se usassemos o instante de carregamento da pagina (new Date()),
+	 * qualquer login/sessao/visualizacao que ocorresse depois de abrir o
+	 * dashboard ficaria fora do filtro `BETWEEN from AND to`, e nem o botao
+	 * "Atualizar" traria os novos eventos (o `to` continuaria congelado).
+	 */
+	private fimDeHoje(): Date {
+		const d = new Date();
+		d.setHours(23, 59, 59, 999);
 		return d;
 	}
 }

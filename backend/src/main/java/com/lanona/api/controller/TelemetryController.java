@@ -2,6 +2,7 @@ package com.lanona.api.controller;
 
 import com.lanona.api.dto.request.HeartbeatRequest;
 import com.lanona.api.dto.request.ItemViewRequest;
+import com.lanona.api.dto.request.MenuViewRequest;
 import com.lanona.api.dto.request.SessionStartRequest;
 import com.lanona.api.dto.response.SessionStartResponse;
 import com.lanona.api.entity.Platform;
@@ -61,6 +62,18 @@ public class TelemetryController {
             @RequestBody(required = false) HeartbeatRequest request) {
         Long activeSeconds = request == null ? null : request.activeSeconds();
         ingestionService.endSession(id, activeSeconds);
+    }
+
+    @PostMapping("/menu-views")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void recordMenuView(
+            @RequestBody(required = false) MenuViewRequest request,
+            @RequestHeader(value = "X-Client-Platform", required = false) String platformHeader,
+            @AuthenticationPrincipal UserPrincipal principal) {
+        String anonymousId = request == null ? null : request.anonymousId();
+        String bodyPlatform = request == null ? null : request.platform();
+        Platform platform = resolvePlatform(bodyPlatform, platformHeader);
+        ingestionService.recordMenuView(anonymousId, platform, userId(principal));
     }
 
     @PostMapping("/item-views")

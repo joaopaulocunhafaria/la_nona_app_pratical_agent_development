@@ -2,11 +2,13 @@ package com.lanona.api.service;
 
 import com.lanona.api.entity.ItemViewEvent;
 import com.lanona.api.entity.LoginEvent;
+import com.lanona.api.entity.MenuViewEvent;
 import com.lanona.api.entity.Platform;
 import com.lanona.api.entity.TelemetrySession;
 import com.lanona.api.repository.ItemViewEventRepository;
 import com.lanona.api.repository.LoginEventRepository;
 import com.lanona.api.repository.MenuItemRepository;
+import com.lanona.api.repository.MenuViewEventRepository;
 import com.lanona.api.repository.TelemetrySessionRepository;
 import com.lanona.api.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -29,6 +31,7 @@ public class TelemetryIngestionService {
     private final TelemetrySessionRepository sessionRepository;
     private final LoginEventRepository loginEventRepository;
     private final ItemViewEventRepository itemViewEventRepository;
+    private final MenuViewEventRepository menuViewEventRepository;
     private final UserRepository userRepository;
     private final MenuItemRepository menuItemRepository;
 
@@ -83,6 +86,16 @@ public class TelemetryIngestionService {
                 .platform(platform)
                 .build();
         itemViewEventRepository.save(event);
+    }
+
+    @Transactional
+    public void recordMenuView(String anonymousId, Platform platform, UUID userId) {
+        MenuViewEvent event = MenuViewEvent.builder()
+                .user(userId == null ? null : userRepository.getReferenceById(userId))
+                .anonymousId(anonymousId)
+                .platform(platform)
+                .build();
+        menuViewEventRepository.save(event);
     }
 
     @Transactional

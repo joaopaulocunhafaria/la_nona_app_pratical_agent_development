@@ -1,6 +1,7 @@
 package com.lanona.api.controller;
 
 import com.lanona.api.dto.response.LoginMetricsResponse;
+import com.lanona.api.dto.response.MenuViewMetricsResponse;
 import com.lanona.api.dto.response.OnlineCountResponse;
 import com.lanona.api.dto.response.SessionDurationResponse;
 import com.lanona.api.dto.response.TopItemResponse;
@@ -43,6 +44,15 @@ public class TelemetryAdminController {
             @RequestParam(required = false, defaultValue = "day") String granularity) {
         Instant end = resolveTo(to);
         return adminService.logins(resolveFrom(from, end), end, granularity);
+    }
+
+    @GetMapping("/menu-views")
+    public MenuViewMetricsResponse menuViews(
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant from,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant to,
+            @RequestParam(required = false, defaultValue = "day") String granularity) {
+        Instant end = resolveTo(to);
+        return adminService.menuViews(resolveFrom(from, end), end, granularity);
     }
 
     @GetMapping("/sessions")

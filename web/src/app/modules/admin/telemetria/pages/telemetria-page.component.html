@@ -23,7 +23,7 @@
 					</div>
 				</div>
 				<div class="h-40 w-40">
-					<p-chart type="doughnut" [data]="onlineChart()" />
+					<p-chart type="doughnut" [data]="onlineChart()" [options]="opcoesDoughnut" />
 				</div>
 			</div>
 		}
@@ -60,6 +60,37 @@
 			</div>
 			<div class="h-64">
 				<p-chart type="line" [data]="loginsChart()" [options]="opcoesBarra" />
+			</div>
+		}
+	</section>
+
+	<!-- Acessos ao cardapio (/menu) -->
+	<section class="rounded-lg bg-white p-4 shadow">
+		<h2 class="mb-3 font-bold" style="color: var(--text-primary)">Acessos ao cardápio</h2>
+		<div class="mb-3 flex flex-wrap items-end gap-3">
+			<div class="flex flex-col">
+				<label class="text-xs" style="color: var(--text-secondary)">De</label>
+				<p-datepicker [(ngModel)]="acessosDe" [showTime]="true" dateFormat="dd/mm/yy" hourFormat="24" />
+			</div>
+			<div class="flex flex-col">
+				<label class="text-xs" style="color: var(--text-secondary)">Até</label>
+				<p-datepicker [(ngModel)]="acessosAte" [showTime]="true" dateFormat="dd/mm/yy" hourFormat="24" />
+			</div>
+			<p-select [options]="granularidades" [(ngModel)]="granularidadeAcessos" optionLabel="label" optionValue="value" />
+			<p-button label="Atualizar" icon="pi pi-refresh" (onClick)="carregarAcessos()" />
+		</div>
+
+		@if (carregandoAcessos()) {
+			<div class="flex justify-center py-8"><p-progressSpinner /></div>
+		} @else if (acessos()) {
+			<div class="mb-2 flex gap-6">
+				<div class="flex flex-col">
+					<span class="text-2xl font-bold" style="color: var(--primary-base)">{{ acessos()!.total }}</span>
+					<span class="text-xs" style="color: var(--text-secondary)">Total de acessos ao cardápio</span>
+				</div>
+			</div>
+			<div class="h-64">
+				<p-chart type="line" [data]="acessosChart()" [options]="opcoesBarra" />
 			</div>
 		}
 	</section>

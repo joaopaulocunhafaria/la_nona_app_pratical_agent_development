@@ -65,6 +65,20 @@ export class TelemetryService {
 		window.addEventListener('pagehide', () => this.encerrar());
 	}
 
+	/**
+	 * Registra um acesso a aba de cardapio (/menu). Deve ser chamado a cada
+	 * navegacao para a lista, sem deduplicar: ir para a home e voltar conta de
+	 * novo. Logado ou anonimo (o usuario e' associado no backend via JWT).
+	 */
+	registrarAcessoMenu(): void {
+		this.http
+			.post<void>(`${this.baseUrl}/menu-views`, {
+				anonymousId: this.anonymousId(),
+				platform: 'WEB',
+			})
+			.subscribe({ error: () => undefined });
+	}
+
 	/** Registra a visualizacao do detalhe de um item do cardapio. */
 	registrarVisualizacaoItem(menuItemId: string): void {
 		this.http

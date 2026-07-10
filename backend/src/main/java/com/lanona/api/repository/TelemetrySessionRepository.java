@@ -36,7 +36,7 @@ public interface TelemetrySessionRepository extends JpaRepository<TelemetrySessi
      */
     @Query(value = """
             SELECT u.name AS userName,
-                   s.anonymous_id AS anonymousId,
+                   MIN(s.anonymous_id) AS anonymousId,
                    bool_or(s.user_id IS NULL) AS anonymous,
                    SUM(s.active_seconds) AS totalActiveSeconds,
                    COUNT(*) AS sessionCount

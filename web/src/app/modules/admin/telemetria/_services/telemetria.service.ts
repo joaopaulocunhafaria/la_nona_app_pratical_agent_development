@@ -19,6 +19,11 @@ export interface LoginMetrics {
 	series: TimeBucket[];
 }
 
+export interface MenuViewMetrics {
+	total: number;
+	series: TimeBucket[];
+}
+
 export interface UserDuration {
 	label: string;
 	anonymous: boolean;
@@ -56,6 +61,11 @@ export class TelemetriaService {
 	logins(periodo: Periodo, granularity: 'hour' | 'day'): Observable<LoginMetrics> {
 		const params = this.comPeriodo(periodo).set('granularity', granularity);
 		return this.http.get<LoginMetrics>(`${this.baseUrl}/logins`, { params });
+	}
+
+	acessosMenu(periodo: Periodo, granularity: 'hour' | 'day'): Observable<MenuViewMetrics> {
+		const params = this.comPeriodo(periodo).set('granularity', granularity);
+		return this.http.get<MenuViewMetrics>(`${this.baseUrl}/menu-views`, { params });
 	}
 
 	sessoes(periodo: Periodo, limit = 20): Observable<SessionDurations> {

@@ -1,3 +1,18 @@
 :host {
 	display: block;
 }
+
+// Com maintainAspectRatio:false o chart.js dimensiona o canvas pelo elemento pai.
+// O PrimeNG renderiza <p-chart><div style="position:relative"><canvas>. Quando
+// responsive e sem height, o div interno fica sem altura e colapsa (grafico some).
+// Forcamos o host e o wrapper a preencher o container de altura fixa (h-64/h-40);
+// o canvas em si e' dimensionado pelo chart.js (responsive:true).
+::ng-deep p-chart {
+	display: block;
+	height: 100%;
+	width: 100%;
+}
+::ng-deep p-chart > div {
+	height: 100% !important;
+	width: 100% !important;
+}
