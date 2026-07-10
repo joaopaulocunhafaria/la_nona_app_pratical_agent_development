@@ -1,6 +1,7 @@
 package com.lanona.api.dto.response;
 
 import com.lanona.api.entity.MenuItem;
+import com.lanona.api.entity.MenuItemStatus;
 
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -15,7 +16,7 @@ public record MenuItemResponse(
         BigDecimal price,
         String category,
         UUID categoryId,
-        boolean available,
+        MenuItemStatus status,
         List<MenuItemImageResponse> images,
         Instant createdAt,
         Instant updatedAt
@@ -34,7 +35,7 @@ public record MenuItemResponse(
                 item.getPrice(),
                 item.getCategory().getName(),
                 item.getCategory().getId(),
-                item.isAvailable(),
+                item.getStatus(),
                 images,
                 item.getCreatedAt(),
                 item.getUpdatedAt()

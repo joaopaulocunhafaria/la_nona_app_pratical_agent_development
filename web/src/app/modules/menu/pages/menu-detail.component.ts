@@ -6,7 +6,7 @@ import { NotificacoesService } from '../../../services/notificacoes.service';
 import { CartService } from '../../cart/_services/cart.service';
 import { FavoritesService } from '../../favorites/_services/favorites.service';
 import { TelemetryService } from '../../../services/telemetry.service';
-import { MenuItem } from '../_modelos/menu-item.model';
+import { MenuItem, STATUS_LABELS, STATUS_SEVERITIES, podePedir } from '../_modelos/menu-item.model';
 import { MenuItemService } from '../_services/menu-item.service';
 
 @Component({
@@ -69,6 +69,21 @@ export class MenuDetailComponent implements OnInit {
 			next: () => this.notificacoesService.sucesso('Item adicionado ao carrinho'),
 			error: (erro) => this.notificacoesService.erro(erro?.message ?? 'Não foi possível adicionar ao carrinho.'),
 		});
+	}
+
+	statusLabel(): string {
+		const item = this.item();
+		return item ? STATUS_LABELS[item.status] : '';
+	}
+
+	statusSeverity(): 'success' | 'info' | 'warn' | 'danger' {
+		const item = this.item();
+		return item ? STATUS_SEVERITIES[item.status] : 'success';
+	}
+
+	podePedir(): boolean {
+		const item = this.item();
+		return !!item && podePedir(item.status);
 	}
 
 	imagens(): string[] {

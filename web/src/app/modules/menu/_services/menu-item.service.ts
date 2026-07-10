@@ -2,7 +2,7 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { environment } from '../../../../environments/environment';
-import { MenuItem, MenuItemRequest } from '../_modelos/menu-item.model';
+import { MenuItem, MenuItemRequest, MenuItemStatus } from '../_modelos/menu-item.model';
 
 @Injectable({ providedIn: 'root' })
 export class MenuItemService {
@@ -10,13 +10,13 @@ export class MenuItemService {
 
 	constructor(private readonly http: HttpClient) {}
 
-	listar(filtros?: { category?: string; available?: boolean; q?: string }): Observable<MenuItem[]> {
+	listar(filtros?: { category?: string; status?: MenuItemStatus; q?: string }): Observable<MenuItem[]> {
 		const params: Record<string, string> = {};
 		if (filtros?.category) {
 			params['category'] = filtros.category;
 		}
-		if (filtros?.available !== undefined) {
-			params['available'] = String(filtros.available);
+		if (filtros?.status !== undefined) {
+			params['status'] = filtros.status;
 		}
 		if (filtros?.q) {
 			params['q'] = filtros.q;

@@ -6,6 +6,7 @@ import com.lanona.api.dto.response.MenuItemResponse;
 import com.lanona.api.entity.MenuCategory;
 import com.lanona.api.entity.MenuItem;
 import com.lanona.api.entity.MenuItemImage;
+import com.lanona.api.entity.MenuItemStatus;
 import com.lanona.api.exception.BadRequestException;
 import com.lanona.api.exception.ResourceNotFoundException;
 import com.lanona.api.repository.MenuCategoryRepository;
@@ -31,11 +32,11 @@ public class MenuItemService {
     private final S3StorageService storageService;
 
     @Transactional(readOnly = true)
-    public List<MenuItemResponse> search(String category, Boolean available, String query) {
+    public List<MenuItemResponse> search(String category, MenuItemStatus status, String query) {
         String normalizedCategory = (category == null || category.isBlank()) ? null : category.trim();
         String normalizedQuery = (query == null || query.isBlank()) ? null : query.trim();
 
-        return menuItemRepository.search(normalizedCategory, available, normalizedQuery).stream()
+        return menuItemRepository.search(normalizedCategory, status, normalizedQuery).stream()
                 .map(MenuItemResponse::from)
                 .toList();
     }
@@ -57,7 +58,7 @@ public class MenuItemService {
                 .description(request.description().trim())
                 .price(request.price())
                 .category(resolveCategory(request.category()))
-                .available(request.available() == null || request.available())
+                .status(request.status() == null ? MenuItemStatus.DISPONIVEL : request.status())
                 .build();
 
         applyImages(item, request.images());
@@ -73,7 +74,7 @@ public class MenuItemService {
         item.setDescription(request.description().trim());
         item.setPrice(request.price());
         item.setCategory(resolveCategory(request.category()));
-        item.setAvailable(request.available() == null || request.available());
+        item.setStatus(request.status() == null ? MenuItemStatus.DISPONIVEL : request.status());
 
         List<String> previousUrls = item.getImages().stream()
                 .map(MenuItemImage::getImageUrl)

@@ -3,7 +3,7 @@ import { FormControl, FormGroup, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { NotificacoesService } from '../../../services/notificacoes.service';
 import { MenuCategory } from '../_modelos/menu-category.model';
-import { MenuItemImage, MenuItemImageRequest } from '../_modelos/menu-item.model';
+import { MenuItemImage, MenuItemImageRequest, MenuItemStatus, STATUS_OPTIONS } from '../_modelos/menu-item.model';
 import { MenuCategoryService } from '../_services/menu-category.service';
 import { MenuItemService } from '../_services/menu-item.service';
 
@@ -24,6 +24,7 @@ export class MenuFormComponent implements OnInit {
 	readonly salvando = signal(false);
 	readonly imagensExistentes = signal<MenuItemImage[]>([]);
 	readonly novasImagens = signal<NovaImagem[]>([]);
+	readonly statusOptions = STATUS_OPTIONS;
 
 	itemId: string | null = null;
 
@@ -32,7 +33,7 @@ export class MenuFormComponent implements OnInit {
 		description: new FormControl<string>('', { nonNullable: true, validators: [Validators.required] }),
 		price: new FormControl<number | null>(null, { validators: [Validators.required, Validators.min(0.01)] }),
 		category: new FormControl<string>('', { nonNullable: true, validators: [Validators.required] }),
-		available: new FormControl<boolean>(true, { nonNullable: true }),
+		status: new FormControl<MenuItemStatus>('DISPONIVEL', { nonNullable: true, validators: [Validators.required] }),
 	});
 
 	get titulo(): string {
@@ -62,7 +63,7 @@ export class MenuFormComponent implements OnInit {
 					description: item.description,
 					price: item.price,
 					category: item.categoryId,
-					available: item.available,
+					status: item.status,
 				});
 				this.imagensExistentes.set([...item.images].sort((a, b) => a.position - b.position));
 				this.carregando.set(false);
@@ -101,8 +102,8 @@ export class MenuFormComponent implements OnInit {
 
 		this.salvando.set(true);
 		this.converterImagens().then((images) => {
-			const { name, description, price, category, available } = this.form.getRawValue();
-			const request = { name, description, price: price!, category, available, images };
+			const { name, description, price, category, status } = this.form.getRawValue();
+			const request = { name, description, price: price!, category, status, images };
 
 			const requisicao$ = this.itemId ? this.menuItemService.atualizar(this.itemId, request) : this.menuItemService.criar(request);
 

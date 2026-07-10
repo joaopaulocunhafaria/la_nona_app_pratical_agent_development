@@ -2,6 +2,7 @@ package com.lanona.api.controller;
 
 import com.lanona.api.dto.request.MenuItemRequest;
 import com.lanona.api.dto.response.MenuItemResponse;
+import com.lanona.api.entity.MenuItemStatus;
 import com.lanona.api.service.MenuItemService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -31,9 +32,9 @@ public class MenuItemController {
     @GetMapping
     public List<MenuItemResponse> list(
             @RequestParam(required = false) String category,
-            @RequestParam(required = false) Boolean available,
+            @RequestParam(required = false) MenuItemStatus status,
             @RequestParam(required = false) String q) {
-        return menuItemService.search(category, available, q);
+        return menuItemService.search(category, status, q);
     }
 
     @GetMapping("/categories")

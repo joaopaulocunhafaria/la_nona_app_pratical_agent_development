@@ -55,7 +55,7 @@ class MenuItemIntegrationTest extends AbstractIntegrationTest {
 
         String createBody = """
                 {"name":"X-Burguer","description":"Pao, carne, queijo","price":29.90,
-                 "category":"hamburguer","available":true,
+                 "category":"hamburguer","status":"DISPONIVEL",
                  "images":[{"base64":"Zm9v","contentType":"image/jpeg"}]}
                 """;
 
@@ -135,7 +135,7 @@ class MenuItemIntegrationTest extends AbstractIntegrationTest {
                         .header("Authorization", "Bearer " + adminToken)
                         .content("""
                                 {"name":"%s","description":"teste","price":19.90,
-                                 "category":"%s","available":true,
+                                 "category":"%s","status":"DISPONIVEL",
                                  "images":[{"base64":"Zm9v","contentType":"image/jpeg"}]}
                                 """.formatted(name, category)))
                 .andExpect(status().isCreated());
@@ -149,7 +149,7 @@ class MenuItemIntegrationTest extends AbstractIntegrationTest {
                         .header("Authorization", "Bearer " + adminToken)
                         .content("""
                                 {"name":"X-Foto","description":"teste","price":19.90,
-                                 "category":"hamburguer","available":true,
+                                 "category":"hamburguer","status":"DISPONIVEL",
                                  "images":[{"base64":"Zm9v","contentType":"image/jpeg"}]}
                                 """))
                 .andExpect(status().isCreated())
@@ -173,7 +173,7 @@ class MenuItemIntegrationTest extends AbstractIntegrationTest {
                         .header("Authorization", "Bearer " + adminToken)
                         .content("""
                                 {"name":"Sem imagem","description":"teste","price":10,
-                                 "category":"Pizza","available":true,"images":[]}
+                                 "category":"Pizza","status":"DISPONIVEL","images":[]}
                                 """))
                 .andExpect(status().isBadRequest());
     }

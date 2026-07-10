@@ -43,10 +43,7 @@
 
 			<div class="flex gap-2">
 				<p-tag [value]="item()!.category" severity="success"></p-tag>
-				<p-tag
-					[value]="item()!.available ? 'Disponível' : 'Indisponível'"
-					[severity]="item()!.available ? 'success' : 'danger'"
-				></p-tag>
+				<p-tag [value]="statusLabel()" [severity]="statusSeverity()"></p-tag>
 			</div>
 
 			<p style="color: var(--text-secondary)">{{ item()!.description }}</p>
@@ -57,7 +54,7 @@
 		</div>
 	</div>
 
-	@if (item()!.available) {
+	@if (podePedir()) {
 		<div class="fixed right-0 bottom-0 left-0 border-t bg-white p-4">
 			<button
 				pButton

@@ -11,7 +11,6 @@ import { ProgressSpinnerModule } from 'primeng/progressspinner';
 import { SelectModule } from 'primeng/select';
 import { TagModule } from 'primeng/tag';
 import { TextareaModule } from 'primeng/textarea';
-import { ToggleSwitchModule } from 'primeng/toggleswitch';
 
 import { SharedModule } from '../../utils/shared.module';
 import { MenuDetailComponent } from './pages/menu-detail.component';
@@ -35,7 +34,6 @@ import { MenuRoutingModule } from './menu-routing.module';
 		SelectModule,
 		TagModule,
 		TextareaModule,
-		ToggleSwitchModule,
 	],
 	providers: [ConfirmationService],
 })

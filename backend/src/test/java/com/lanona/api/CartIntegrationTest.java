@@ -46,7 +46,7 @@ class CartIntegrationTest extends AbstractIntegrationTest {
                         .header("Authorization", "Bearer " + adminToken)
                         .content("""
                                 {"name":"%s","description":"desc","price":%s,"category":"Pizza",
-                                 "available":true,"images":[{"base64":"Zm9v","contentType":"image/jpeg"}]}
+                                 "status":"DISPONIVEL","images":[{"base64":"Zm9v","contentType":"image/jpeg"}]}
                                 """.formatted(name, price)))
                 .andReturn().getResponse().getContentAsString();
         return objectMapper.readTree(response).get("id").asText();

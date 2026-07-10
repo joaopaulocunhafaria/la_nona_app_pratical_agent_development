@@ -6,6 +6,7 @@ import com.lanona.api.dto.response.MenuItemResponse;
 import com.lanona.api.entity.MenuCategory;
 import com.lanona.api.entity.MenuItem;
 import com.lanona.api.entity.MenuItemImage;
+import com.lanona.api.entity.MenuItemStatus;
 import com.lanona.api.exception.BadRequestException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -62,7 +63,7 @@ class MenuItemServiceTest {
                 .thenReturn("https://bucket/menu-items/new.jpg");
 
         MenuItemRequest request = new MenuItemRequest(
-                "X-Burguer", "Pao e carne", new BigDecimal("29.90"), "hamburguer", true,
+                "X-Burguer", "Pao e carne", new BigDecimal("29.90"), "hamburguer", MenuItemStatus.DISPONIVEL,
                 List.of(new MenuItemImageRequest(null, "Zm9v", "image/jpeg")));
 
         MenuItemResponse response = menuItemService.create(request);
@@ -75,7 +76,7 @@ class MenuItemServiceTest {
     @Test
     void create_rejectsImageWithoutUrlOrBase64() {
         MenuItemRequest request = new MenuItemRequest(
-                "X-Burguer", "Pao e carne", new BigDecimal("10.00"), "pizza", true,
+                "X-Burguer", "Pao e carne", new BigDecimal("10.00"), "pizza", MenuItemStatus.DISPONIVEL,
                 List.of(new MenuItemImageRequest(null, null, null)));
 
         assertThatThrownBy(() -> menuItemService.create(request))
@@ -93,7 +94,7 @@ class MenuItemServiceTest {
                 .description("desc")
                 .price(new BigDecimal("10.00"))
                 .category(MenuCategory.builder().id(UUID.randomUUID()).name("Pizza").build())
-                .available(true)
+                .status(MenuItemStatus.DISPONIVEL)
                 .images(new ArrayList<>())
                 .build();
         existing.getImages().add(MenuItemImage.builder()
@@ -106,7 +107,7 @@ class MenuItemServiceTest {
                 .thenReturn("https://bucket/menu-items/added.png");
 
         MenuItemRequest request = new MenuItemRequest(
-                "Novo Nome", "nova desc", new BigDecimal("12.00"), "pizza", true,
+                "Novo Nome", "nova desc", new BigDecimal("12.00"), "pizza", MenuItemStatus.DISPONIVEL,
                 List.of(
                         new MenuItemImageRequest("https://bucket/menu-items/kept.jpg", null, null),
                         new MenuItemImageRequest(null, "Yml0", "image/png")));
@@ -126,7 +127,7 @@ class MenuItemServiceTest {
         MenuItem existing = MenuItem.builder()
                 .id(id).name("X").description("d").price(new BigDecimal("1.00"))
                 .category(MenuCategory.builder().id(UUID.randomUUID()).name("Bebida").build())
-                .available(true).images(new ArrayList<>())
+                .status(MenuItemStatus.DISPONIVEL).images(new ArrayList<>())
                 .build();
         existing.getImages().add(MenuItemImage.builder()
                 .menuItem(existing).imageUrl("https://bucket/menu-items/a.jpg").position(0).build());

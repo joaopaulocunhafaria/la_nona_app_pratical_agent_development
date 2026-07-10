@@ -99,9 +99,16 @@
 				</div>
 			</div>
 
-			<div class="flex items-center gap-3">
-				<p-toggleswitch formControlName="available"></p-toggleswitch>
-				<span style="color: var(--text-primary)">Disponível</span>
+			<div class="flex flex-col gap-1">
+				<label class="text-sm font-medium" style="color: var(--text-secondary)">Situação</label>
+				<p-select
+					formControlName="status"
+					[options]="statusOptions"
+					optionLabel="label"
+					optionValue="value"
+					placeholder="Selecione"
+					styleClass="w-full"
+				></p-select>
 			</div>
 
 			<button

@@ -4,6 +4,7 @@ import com.lanona.api.dto.request.AddCartItemRequest;
 import com.lanona.api.entity.CartItem;
 import com.lanona.api.entity.MenuCategory;
 import com.lanona.api.entity.MenuItem;
+import com.lanona.api.entity.MenuItemStatus;
 import com.lanona.api.entity.User;
 import com.lanona.api.repository.CartItemRepository;
 import com.lanona.api.repository.MenuItemRepository;
@@ -52,7 +53,7 @@ class CartServiceTest {
                 .description("desc")
                 .price(new BigDecimal("45.00"))
                 .category(MenuCategory.builder().id(UUID.randomUUID()).name("Pizza").build())
-                .available(true)
+                .status(MenuItemStatus.DISPONIVEL)
                 .build();
 
         lenient().when(menuItemRepository.findById(menuItemId)).thenReturn(Optional.of(menuItem));

@@ -1,5 +1,6 @@
 package com.lanona.api.dto.request;
 
+import com.lanona.api.entity.MenuItemStatus;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotBlank;
@@ -23,7 +24,7 @@ public record MenuItemRequest(
         @NotBlank(message = "Selecione uma categoria")
         String category,
 
-        Boolean available,
+        MenuItemStatus status,
 
         @NotEmpty(message = "Adicione pelo menos uma imagem")
         List<@Valid MenuItemImageRequest> images

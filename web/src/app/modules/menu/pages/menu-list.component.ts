@@ -4,9 +4,10 @@ import { ConfirmationService } from 'primeng/api';
 import { AuthPromptService } from '../../../services/auth-prompt.service';
 import { AuthService } from '../../../services/auth.service';
 import { NotificacoesService } from '../../../services/notificacoes.service';
+import { TelemetryService } from '../../../services/telemetry.service';
 import { CartService } from '../../cart/_services/cart.service';
 import { FavoritesService } from '../../favorites/_services/favorites.service';
-import { MenuItem } from '../_modelos/menu-item.model';
+import { MenuItem, STATUS_LABELS, STATUS_SEVERITIES, podePedir } from '../_modelos/menu-item.model';
 import { MenuItemService } from '../_services/menu-item.service';
 
 @Component({
@@ -52,11 +53,14 @@ export class MenuListComponent implements OnInit {
 		private readonly notificacoesService: NotificacoesService,
 		private readonly confirmationService: ConfirmationService,
 		private readonly router: Router,
+		private readonly telemetryService: TelemetryService,
 	) {
 		this.isAdmin = this.authService.isAdmin;
 	}
 
 	ngOnInit(): void {
+		// Cada entrada em /menu conta como um acesso ao cardapio (sem deduplicar).
+		this.telemetryService.registrarAcessoMenu();
 		this.carregarItens();
 		this.carregarCategorias();
 		if (this.authService.isAuthenticated()) {
@@ -180,5 +184,22 @@ export class MenuListComponent implements OnInit {
 
 	primeiraImagem(item: MenuItem): string | null {
 		return item.images.length > 0 ? item.images[0].url : null;
+	}
+
+	statusLabel(item: MenuItem): string {
+		return STATUS_LABELS[item.status];
+	}
+
+	statusSeverity(item: MenuItem): 'success' | 'info' | 'warn' | 'danger' {
+		return STATUS_SEVERITIES[item.status];
+	}
+
+	podePedir(item: MenuItem): boolean {
+		return podePedir(item.status);
+	}
+
+	/** Exibe o selo de status apenas quando não for o estado padrão (Disponível). */
+	mostrarStatus(item: MenuItem): boolean {
+		return item.status !== 'DISPONIVEL';
 	}
 }
